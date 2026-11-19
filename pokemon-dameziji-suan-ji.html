@@ -1,0 +1,1265 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="color-scheme" content="light dark" />
+<link rel="icon" href="data:," />
+<title>ポケモン ダメージ計算機｜チャンピオンズ準拠・被ダメージ一覧</title>
+<style>
+button, [role="button"], select, summary, input:not([type="checkbox"],[type="radio"]) { min-height: 2.25rem;}
+* { box-sizing: border-box;}
+:root{
+--bg:#f6f1e7; --surface:#fffdf8; --surface2:#efe8d8; --ink:#1c2430; --muted:#5b6572;
+--line:#ddd3bd; --accent:#c62f24; --accent-ink:#fff; --navy:#1e3a5c; --navy-ink:#fff;
+--good:#177245; --warn:#b45309; --danger:#b42318; --chip:#ece4d0;
+--bar-bg:#e7dfcc; --bar:#c62f24; --shadow:0 1px 3px rgba(28,36,48,.12);
+color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark){
+:root{
+--bg:#14181f; --surface:#1d232e; --surface2:#262e3b; --ink:#eef1f5; --muted:#a7b0bd;
+--line:#39424f; --accent:#e4574c; --navy:#7fb0e6; --navy-ink:#10151d;
+--good:#4cc38a; --warn:#f0a44a; --danger:#ff8a7a; --chip:#2a323f;
+--bar-bg:#333c49; --bar:#e4574c; --shadow:0 1px 3px rgba(0,0,0,.4);
+}
+}
+html{ -webkit-text-size-adjust:100%;}
+body{ margin:0; background:var(--bg); color:var(--ink);
+font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic UI","Noto Sans JP",system-ui,sans-serif;
+line-height:1.55; font-size:15px;}
+a{ color:var(--navy);}
+@media (prefers-color-scheme: dark){ a{ color:#9ec2ee;}}
+.wrap{ max-width:1320px; margin:0 auto; padding:14px 14px 48px;}
+h1{ font-size:clamp(22px,4.5vw,32px); line-height:1.25; margin:6px 0 4px; letter-spacing:.01em;}
+.title-row{ display:flex; align-items:baseline; gap:14px; flex-wrap:wrap;}
+.title-row h1{ margin-right:0;}
+.manual-link{ font-size:15px; font-weight:700; white-space:nowrap; text-decoration:underline; text-underline-offset:3px;}
+.layout{ display:grid; grid-template-columns:380px minmax(0,1fr); gap:16px; align-items:start;}
+.left-col{ display:flex; flex-direction:column; gap:16px; min-width:0;}
+.right-col{ min-width:0;}
+@media (max-width:900px){.layout{ grid-template-columns:1fr;}}
+.panel{ background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:14px; box-shadow:var(--shadow);}
+.panel h2{ font-size:17px; margin:0 0 10px; border-bottom:2px solid var(--accent); padding-bottom:6px;}
+.panel h3{ font-size:14px; margin:14px 0 6px;}
+label.f{ display:block; font-size:12.5px; font-weight:700; color:var(--muted); margin:10px 0 4px;}
+select, input[type="number"], input[type="text"], input[type="search"]{
+width:100%; padding:8px 10px; border:1px solid var(--line); border-radius:8px;
+background:var(--surface); color:var(--ink); font-size:15px;}
+.type-badges{ display:flex; gap:6px; flex-wrap:wrap; margin:8px 0 2px;}
+.tbadge{ color:#fff; font-size:12px; font-weight:700; border-radius:6px; padding:2px 9px; text-shadow:0 1px 1px rgba(0,0,0,.35);}
+.stat-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:8px;}
+.stat-cell{ background:var(--surface2); border-radius:8px; padding:6px 8px; text-align:center;}
+.stat-cell.k{ font-size:11px; color:var(--muted); font-weight:700;}
+.stat-cell.v{ font-size:17px; font-weight:800;}
+.stat-cell.b{ font-size:11px; color:var(--muted);}
+.preset-row{ display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;}
+.preset-row button,.btn{
+border:1px solid var(--line); background:var(--surface2); color:var(--ink);
+border-radius:8px; padding:7px 11px; font-size:13px; font-weight:700; cursor:pointer; min-height:36px;}
+.preset-row button[aria-pressed="true"]{ background:var(--navy); color:var(--navy-ink); border-color:var(--navy);}
+.sp-row{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+.sp-row label{ font-size:12px; font-weight:700; color:var(--muted); display:block;}
+.sp-row input{ margin-top:3px; text-align:center; font-weight:700;}
+.sp-total{ font-size:12.5px; margin-top:6px; color:var(--muted);}
+.sp-total.over{ color:var(--danger); font-weight:800;}
+.weak-list{ font-size:13px; margin-top:4px;}
+.weak-list b{ color:var(--danger);}
+.note{ font-size:12.5px; color:var(--muted);}
+.toolbar{ display:flex; flex-wrap:wrap; gap:8px; align-items:end; margin-bottom:10px;}
+.toolbar.grow{ flex:1 1 180px;}
+.toolbar label{ font-size:12px; font-weight:700; color:var(--muted); display:block; margin-bottom:3px;}
+.checkline{ display:flex; align-items:center; gap:8px; min-height:36px; font-size:13.5px; font-weight:600; cursor:pointer; padding:4px 2px;}
+.checkline input{ width:20px; height:20px; accent-color:var(--accent);}
+.ko-range-row{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; font-size:13.5px; font-weight:600;}
+.ko-range-row input[type="number"]{ width:64px; padding:6px 8px; text-align:center; font-weight:700;}
+.ko-range-row .ko-sep{ color:var(--muted); font-weight:400;}
+.field-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+@media (max-width:480px){.field-grid{ grid-template-columns:1fr;}}
+.results-head{ display:flex; justify-content:space-between; align-items:baseline; gap:10px; flex-wrap:wrap; margin:4px 0 8px;}
+.results-head h2{ font-size:18px; margin:0;}
+.row-card{ background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px; box-shadow:var(--shadow);}
+.row-top{ display:flex; flex-wrap:wrap; gap:6px 10px; align-items:baseline; justify-content:space-between;}
+.atk-name{ font-weight:800; font-size:15.5px;}
+.atk-set{ font-size:12px; color:var(--muted);}
+.move-line{ display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:4px;}
+.move-name{ font-weight:800; font-size:16px;}
+.cat{ font-size:11.5px; font-weight:700; border:1px solid var(--line); border-radius:999px; padding:1px 8px; color:var(--muted);}
+.eff{ font-size:12px; font-weight:800;}
+.eff.x4,.eff.x2{ color:var(--danger);}.eff.x05,.eff.x025{ color:var(--good);}.eff.x0{ color:var(--muted);}
+.dmg-line{ display:flex; flex-wrap:wrap; gap:6px 14px; align-items:baseline; margin-top:6px;}
+.dmg-num{ font-size:19px; font-weight:900; font-variant-numeric:tabular-nums;}
+.dmg-pct{ font-size:14px; font-weight:800; font-variant-numeric:tabular-nums;}
+.ko{ font-size:13px; font-weight:900; border-radius:6px; padding:2px 9px; color:#fff; background:var(--navy);}
+@media (prefers-color-scheme: dark){.ko{ color:#10151d;}}
+.ko.k1{ background:var(--danger);}.ko.kr1{ background:var(--warn); color:#241a02;}
+.ko.k2{ background:#8a6d1f;} @media (prefers-color-scheme: dark){.ko.k2{ color:#10151d;}}
+.bar{ height:10px; background:var(--bar-bg); border-radius:999px; overflow:hidden; margin-top:7px; position:relative;}
+.bar i{ display:block; height:100%; background:var(--bar);}
+.bar.min-mark{ position:absolute; top:0; bottom:0; width:3px; background:var(--ink); opacity:.55;}
+.rolls{ font-size:12px; color:var(--muted); margin-top:6px; font-variant-numeric:tabular-nums; word-break:break-all;}
+.row-note{ font-size:12px; color:var(--warn); font-weight:700; margin-top:4px;}
+.empty{ background:var(--surface); border:1px dashed var(--line); border-radius:12px; padding:22px; text-align:center; color:var(--muted);}
+details.howto{ margin-top:18px; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:6px 14px;}
+details.howto summary{ font-weight:800; cursor:pointer; padding:8px 0;}
+details.howto p, details.howto li{ font-size:13.5px;}
+footer{ margin-top:20px; font-size:12.5px; color:var(--muted);}
+footer li{ margin-bottom:3px;}
+
+.atk-panel h2{ border-bottom-color:var(--navy);}
+.sp-row6{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
+.sp-row6 label{ font-size:12px; font-weight:700; color:var(--muted); display:block;}
+.sp-row6 input{ margin-top:3px; text-align:center; font-weight:700; width:100%; padding:8px 6px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); font-size:15px;}
+.rank-row{ display:grid; grid-template-columns:1fr 1fr; gap:8px;}
+.rank-row label{ font-size:12px; font-weight:700; color:var(--muted); display:block;}
+.rank-row select{ margin-top:3px; text-align:center; font-weight:700;}
+.move-pick{ margin-top:6px;}
+.any-wrap{ margin:2px 0 10px; padding:10px; background:var(--surface2); border-radius:8px;}
+.any-wrap label.f{ margin-top:0;}
+.any-wrap input[type="search"]{ margin-bottom:6px; background:var(--surface);}
+.any-wrap select{ background:var(--surface);}
+.src-link{ font-size:12px;}
+.sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="title-row"><h1>被ダメージ計算機 ― ポケモンチャンピオンズ準拠</h1><a class="manual-link" href="https://muse.ai/s/pokemon-dameziji-suan-ji-cao-zuo-shuo-zp6fxzqxxxnlxxxl/If78ejncekVeY7_L99oMmXN933Xv0PxaPjtjFDvLLf4" target="_blank" rel="noopener">操作説明</a></div>
+<div class="layout">
+<div class="left-col">
+<!-- ============ DEFENDER ============ -->
+<section class="panel" aria-labelledby="def-h">
+<h2 id="def-h">防御側ポケモン</h2>
+<label class="f" for="def-search">ポケモンを検索</label>
+<input type="search" id="def-search" placeholder="例：ガブ、カイリュー、ブリ" autocomplete="off" />
+<label class="f" for="def-select">防御側ポケモン</label>
+<select id="def-select"></select>
+<p class="note" id="def-ability" style="margin:4px 0 0"></p>
+
+<h3>耐久の振り方（能力ポイント）</h3>
+<div class="sp-row">
+<label>HP<input type="number" id="sp-h" min="0" max="32" step="1" value="32" /></label>
+<label>防御<input type="number" id="sp-b" min="0" max="32" step="1" value="32" /></label>
+<label>特防<input type="number" id="sp-d" min="0" max="32" step="1" value="2" /></label>
+</div>
+<p class="sp-total" id="sp-total"></p>
+
+<label class="f" for="def-nature">性格補正（ステータスアライメント）</label>
+<select id="def-nature">
+<option value="none">補正なし</option>
+<option value="b" selected>防御↑</option>
+<option value="d">特防↑</option>
+<option value="bd">防御↑・特防↓</option>
+<option value="db">特防↑・防御↓</option>
+</select>
+
+<label class="f" for="def-item">防御側の持ち物</label>
+<select id="def-item">
+<option value="none">なし</option>
+<option value="vest">とつげきチョッキ（特防×1.5）</option>
+<option value="evio">しんかのきせき（防御・特防×1.5）</option>
+<option value="sash">きあいのタスキ（HP満タンなら1残る）</option>
+<option value="berry-haban">ハバンのみ（ドラゴン技を半減・1回）</option>
+<option value="berry-yache">ヤチェのみ（こおり技を半減・1回）</option>
+<option value="berry-shuca">シュカのみ（じめん技を半減・1回）</option>
+</select>
+
+</section>
+
+<!-- ============ ATTACKER (custom, pokedb data) ============ -->
+<section class="panel atk-panel" aria-labelledby="atk-h">
+<h2 id="atk-h">攻撃側ポケモン（カスタム計算）</h2>
+<label class="f" for="atk-search">ポケモンを検索</label>
+<input type="search" id="atk-search" placeholder="例：ガブ、ロトム、ドリュ" autocomplete="off" />
+<label class="f" for="atk-select">攻撃側ポケモン</label>
+<select id="atk-select"></select>
+<label class="f" for="atk-nature">性格（能力補正：上昇／下降）</label>
+<select id="atk-nature"></select>
+<label class="f" for="atk-item">攻撃側の持ち物</label>
+<select id="atk-item">
+<option value="none">なし</option>
+<option value="band">こだわりハチマキ（物理技 1.5倍）</option>
+<option value="specs">こだわりメガネ（特殊技 1.5倍）</option>
+<option value="orb">いのちのたま（すべての技 1.3倍）</option>
+<option value="belt">たつじんのおび（効果抜群のとき 1.2倍）</option>
+<option value="scarf">こだわりスカーフ（火力に影響なし・素早さ1.5倍）</option>
+</select>
+<p class="note" style="margin:4px 0 0">こだわりスカーフは素早さだけが上がるため、ダメージは変わりません。</p>
+<label class="f" for="atk-spread">能力ポイント配分プリセット（個別の採用順）</label>
+<select id="atk-spread"></select>
+<div class="sp-row6" style="margin-top:10px">
+<label id="asp-a-wrap">攻撃<input type="number" id="asp-a" min="0" max="32" step="1" /></label>
+<label id="asp-c-wrap">特攻<input type="number" id="asp-c" min="0" max="32" step="1" /></label>
+<label id="asp-s-wrap">素早さ<input type="number" id="asp-s" min="0" max="32" step="1" /></label>
+</div>
+<p class="sp-total" id="asp-total"></p>
+<label class="f">能力ランク（こうげき／とくこう）</label>
+<div class="rank-row">
+<label id="rank-a-wrap">こうげきランク
+<select id="atk-rank-a" aria-label="こうげきランク">
+<option value="6">+6</option><option value="5">+5</option><option value="4">+4</option><option value="3">+3</option><option value="2">+2</option><option value="1">+1</option><option value="0" selected>±0</option><option value="-1">-1</option><option value="-2">-2</option><option value="-3">-3</option><option value="-4">-4</option><option value="-5">-5</option><option value="-6">-6</option>
+</select></label>
+<label id="rank-c-wrap">とくこうランク
+<select id="atk-rank-c" aria-label="とくこうランク">
+<option value="6">+6</option><option value="5">+5</option><option value="4">+4</option><option value="3">+3</option><option value="2">+2</option><option value="1">+1</option><option value="0" selected>±0</option><option value="-1">-1</option><option value="-2">-2</option><option value="-3">-3</option><option value="-4">-4</option><option value="-5">-5</option><option value="-6">-6</option>
+</select></label>
+</div>
+<p class="note" style="margin:4px 0 0">こうげきランクととくこうランクはそれぞれ独立に設定できます。物理技にはこうげきランク、特殊技にはとくこうランクが反映されます（+1で1.5倍、-1で2/3倍など通常のランク補正）。</p>
+<h3>技を選択（採用技一覧／任意の技・最大2つ）</h3>
+<div id="atk-moves"></div>
+<p class="note" id="atk-src" style="margin-top:10px"></p>
+</section>
+</div>
+
+<!-- ============ RESULTS ============ -->
+<div class="right-col">
+<section class="panel" style="margin-bottom:12px" aria-labelledby="fld-h">
+<h2 id="fld-h" style="font-size:15px">場の条件・表示</h2>
+<div class="field-grid">
+<div>
+<label class="f" for="weather" style="margin-top:0">天候</label>
+<select id="weather">
+<option value="none">なし</option><option value="sun">晴れ</option>
+<option value="rain">雨</option><option value="sand">砂嵐</option><option value="snow">雪</option>
+</select>
+</div>
+<div>
+<label class="f" for="terrain" style="margin-top:0">フィールド</label>
+<select id="terrain">
+<option value="none">なし</option><option value="grassy">グラスフィールド</option>
+<option value="electric">エレキフィールド</option><option value="psychic">サイコフィールド</option>
+<option value="misty">ミストフィールド</option>
+</select>
+</div>
+<div>
+<label class="f" for="wall" style="margin-top:0">壁</label>
+<select id="wall">
+<option value="none">なし</option><option value="reflect">リフレクター（物理半減）</option>
+<option value="light">ひかりのかべ（特殊半減）</option><option value="veil">オーロラベール（両方半減）</option>
+</select>
+</div>
+</div>
+<label class="checkline"><input type="checkbox" id="auto-field" checked /> 特性の天候・フィールドを自動反映（晴れ／グラス／サイコ）</label>
+<label class="checkline"><input type="checkbox" id="crit" /> すべて急所で計算（相手の防御ランク上昇は無視）</label>
+<label class="f" for="ko-min">確定数で絞り込み（最小ダメージでの確定数）</label>
+<div class="ko-range-row">
+<span>確定</span><input type="number" id="ko-min" min="1" step="1" inputmode="numeric" placeholder="n" aria-label="確定数の下限（発）" /><span>発以上</span>
+<span class="ko-sep">〜</span>
+<span>確定</span><input type="number" id="ko-max" min="1" step="1" inputmode="numeric" placeholder="m" aria-label="確定数の上限（発）" /><span>発以下</span>
+</div>
+<p class="note" style="margin:3px 0 0">空欄の側は絞り込みません（両方空欄なら絞り込みなし）。入力時は、効果のない攻撃は除外されます。</p>
+<label class="f" for="move-search">攻撃側・技名で絞り込み</label>
+<input type="search" id="move-search" placeholder="例：じしん、サーフゴー、ムーン" autocomplete="off" />
+</section>
+
+
+<div class="results-head" style="margin-top:2px">
+<h2 id="custom-title">カスタム攻撃側 → 防御側</h2>
+<span class="note" id="custom-count"></span>
+</div>
+<div id="custom-results" style="margin-bottom:16px" aria-live="polite"></div>
+<div class="results-head">
+<h2 id="res-title">受けるダメージ一覧</h2>
+<span class="note" id="res-count"></span>
+</div>
+<div id="results" aria-live="polite"></div>
+
+<details class="howto">
+<summary>登録されているアタッカーと計算の前提</summary>
+<p>攻撃側は、バトルデータベース チャンピオンズ（シーズンM-8 シングル／レギュレーションM-C）の使用率上位50位までのポケモンを登録しています（アタッカー型に限らず、防御型・受け型も含みます）。各ポケモンの技は使用率上位の攻撃技（最大4つ）、性格は採用率1位、能力ポイント配分は個別1位の配分を基本とし、カード内に「いじっぱり A32 S32／いのちのたま」のように明記しています。持ち物は、採用率上位の持ち物がダメージ補正のあるもの（いのちのたま、くろいメガネ、ノーマルジュエルなど）の場合だけその補正を適用し、メガストーン・こだわりスカーフ・とつげきチョッキ・たべのこしなどダメージ補正のない持ち物の場合は「なし」として計算しています。技の威力・タイプ・分類、ポケモンの種族値・タイプはポケモン徹底攻略の掲載内容を優先して採用しています。</p>
+<ul>
+<li>ダメージ式は第9世代準拠：基礎ダメージ＝⌊⌊22×威力×攻撃÷防御⌋÷50⌋＋2 に、タイプ一致（×1.5／てきおうりょく×2.0）・タイプ相性・天候・フィールド・壁・持ち物・特性・急所（×1.5）・乱数（×0.85〜1.00の16通り）を順に適用します。</li>
+<li>「確定数」は16通りの乱数すべてで検証しています。例：確1＝最低乱数でも一撃、乱1 (62.5%)＝16通り中10通りで一撃。</li>
+<li>ボディプレスは攻撃側の防御で計算します。トリックフラワーは確定急所として計算します。けたぐり・おはかまいり等の変動威力技は登録していません。</li>
+<li>マルチスケイル（HP満タン時半減）、ふゆう（じめん無効）、ばけのかわ（初回ほぼ無効）、がんじょう（HP満タンなら1残る）は防御側特性として反映・注記します。きあいのタスキも同様です。</li>
+<li>登録アタッカー側の能力ランク変化（つるぎのまい等）、状態異常、ダブルバトルの範囲技3/4補正は対象外です（カスタム計算では、こうげき／とくこうのランクを-6〜+6で指定できます）。あくまでシングル対面の目安としてご利用ください。</li>
+</ul>
+</details>
+
+<footer>
+<p style="font-weight:700;color:var(--ink)">データ出典</p>
+<ul>
+<li>種族値・タイプ・使用率ランキング：ポケモン徹底攻略「使用率ランキング」 <a href="https://yakkun.com/ch/ranking.htm" target="_blank" rel="noopener">https://yakkun.com/ch/ranking.htm</a>（2026/11/12更新）</li>
+<li>能力値の計算式（チャンピオンズ：個体値31固定・能力ポイント）：ポケモン徹底攻略「個体値・種族値・努力値とは？」 <a href="https://yakkun.com/dp/system.htm" target="_blank" rel="noopener">https://yakkun.com/dp/system.htm</a></li>
+<li>技の威力・タイプ・分類、タイプ相性表：ポケモン徹底攻略の技図鑑・タイプ相性の掲載内容に準拠</li>
+<li>攻撃側カスタム計算の重さ・種族値・特性・採用技・性格の上昇／下降・能力ポイント配分：バトルデータベース チャンピオンズ「ポケモン使用率ランキング（シーズンM-8 シングルバトル／レギュレーションM-C）」 <a href="https://champs.pokedb.tokyo/pokemon/list?rule=0" target="_blank" rel="noopener">https://champs.pokedb.tokyo/pokemon/list?rule=0</a>（2026/11/19取得）</li>
+</ul>
+<p>本ツールは非公式のファンメイド計算機です。ゲーム内アップデートで数値が変わる場合があります。</p>
+</footer>
+</div>
+</div>
+</div>
+
+<script>
+"use strict";
+/* ================= タイプ相性（ポケモン徹底攻略のタイプ相性表に準拠・第6世代以降） ================= */
+var TYPES = ["ノーマル","ほのお","みず","でんき","くさ","こおり","かくとう","どく","じめん","ひこう","エスパー","むし","いわ","ゴースト","ドラゴン","あく","はがね","フェアリー"];
+var TYPE_COLORS = {"ノーマル":"#9099a1","ほのお":"#ff9d54","みず":"#4d90d5","でんき":"#c9a227","くさ":"#63bc5a","こおり":"#74cec0","かくとう":"#ce416b","どく":"#ab6ac8","じめん":"#d97845","ひこう":"#8fa8dd","エスパー":"#fa7179","むし":"#90c12c","いわ":"#c7b78b","ゴースト":"#5269ad","ドラゴン":"#0b6dc3","あく":"#5a5465","はがね":"#5a8ea2","フェアリー":"#ec8fe6"};
+/* CHART[攻撃][防御] 未記載は1倍 */
+var CHART = {
+"ノーマル":{"いわ":.5,"ゴースト":0,"はがね":.5},
+"ほのお":{"ほのお":.5,"みず":.5,"くさ":2,"こおり":2,"むし":2,"いわ":.5,"ドラゴン":.5,"はがね":2},
+"みず":{"ほのお":2,"みず":.5,"くさ":.5,"じめん":2,"いわ":2,"ドラゴン":.5},
+"でんき":{"みず":2,"でんき":.5,"くさ":.5,"じめん":0,"ひこう":2,"ドラゴン":.5},
+"くさ":{"ほのお":.5,"みず":2,"くさ":.5,"どく":.5,"じめん":2,"ひこう":.5,"むし":.5,"いわ":2,"ドラゴン":.5,"はがね":.5},
+"こおり":{"ほのお":.5,"みず":.5,"くさ":2,"こおり":.5,"じめん":2,"ひこう":2,"ドラゴン":2,"はがね":.5},
+"かくとう":{"ノーマル":2,"こおり":2,"どく":.5,"ひこう":.5,"エスパー":.5,"むし":.5,"いわ":2,"ゴースト":0,"あく":2,"はがね":2,"フェアリー":.5},
+"どく":{"くさ":2,"どく":.5,"じめん":.5,"いわ":.5,"ゴースト":.5,"はがね":0,"フェアリー":2},
+"じめん":{"ほのお":2,"でんき":2,"くさ":.5,"どく":2,"ひこう":0,"むし":.5,"いわ":2,"はがね":2},
+"ひこう":{"でんき":.5,"くさ":2,"かくとう":2,"むし":2,"いわ":.5,"はがね":.5},
+"エスパー":{"かくとう":2,"どく":2,"エスパー":.5,"あく":0,"はがね":.5},
+"むし":{"ほのお":.5,"くさ":2,"かくとう":.5,"どく":.5,"ひこう":.5,"エスパー":2,"ゴースト":.5,"あく":2,"はがね":.5,"フェアリー":.5},
+"いわ":{"ほのお":2,"こおり":2,"かくとう":.5,"じめん":.5,"ひこう":2,"むし":2,"はがね":.5},
+"ゴースト":{"ノーマル":0,"エスパー":2,"ゴースト":2,"あく":.5},
+"ドラゴン":{"ドラゴン":2,"はがね":.5,"フェアリー":0},
+"あく":{"かくとう":.5,"エスパー":2,"ゴースト":2,"あく":.5,"フェアリー":.5},
+"はがね":{"ほのお":.5,"みず":.5,"でんき":.5,"こおり":2,"いわ":2,"はがね":.5,"フェアリー":2},
+"フェアリー":{"ほのお":.5,"かくとう":2,"どく":.5,"ドラゴン":2,"あく":2,"はがね":.5}
+};
+function effOf(atkType, defTypes){
+var e = 1, row = CHART[atkType] || {};
+defTypes.forEach(function(dt){ if (row[dt]!== undefined) e *= row[dt];});
+return e;
+}
+
+/* ================= ポケモンデータ（種族値：ポケモン徹底攻略 チャンピオンズ図鑑／使用率ランキング掲載値） ================= */
+/* base: [HP, 攻撃, 防御, 特攻, 特防, 素早さ] */
+var POKEMON = [
+{name:"ガブリアス", types:["ドラゴン","じめん"], base:[108,130,95,80,85,102], ability:"さめはだ"},
+{name:"アシレーヌ", types:["みず","フェアリー"], base:[80,74,74,126,116,60], ability:"げきりゅう"},
+{name:"カバルドン", types:["じめん"], base:[108,112,118,68,72,47], ability:"すなおこし"},
+{name:"ブリジュラス", types:["はがね","ドラゴン"], base:[90,105,130,125,65,85], ability:"じきゅうりょく"},
+{name:"メガルカリオZ", types:["かくとう","はがね"], base:[70,100,70,164,70,151], ability:"はどうのぼうご"},
+{name:"ミミッキュ", types:["ゴースト","フェアリー"], base:[55,90,80,50,105,96], ability:"ばけのかわ"},
+{name:"メガグソクムシャ", types:["むし","はがね"], base:[75,150,175,70,120,40], ability:"かたいツメ"},
+{name:"メガリザードンY", types:["ほのお","ひこう"], base:[78,104,78,159,115,100], ability:"ひでり"},
+{name:"イダイトウ♂", types:["みず","ゴースト"], base:[120,112,65,80,75,78], ability:"てきおうりょく"},
+{name:"メガボーマンダ", types:["ドラゴン","ひこう"], base:[95,145,130,120,90,120], ability:"スカイスキン"},
+{name:"サーフゴー", types:["はがね","ゴースト"], base:[87,60,95,133,91,84], ability:"おうごんのからだ"},
+{name:"マスカーニャ", types:["くさ","あく"], base:[76,110,70,81,70,123], ability:"へんげんじざい"},
+{name:"アーマーガア", types:["ひこう","はがね"], base:[98,87,105,53,85,67], ability:"ミラーアーマー"},
+{name:"メガカイリュー", types:["ドラゴン","ひこう"], base:[91,124,115,145,125,100], ability:"マルチスケイル"},
+{name:"カイリュー", types:["ドラゴン","ひこう"], base:[91,134,95,100,100,80], ability:"マルチスケイル"},
+{name:"ゴリランダー", types:["くさ"], base:[100,125,90,60,70,85], ability:"グラスメイカー"},
+{name:"メガメタグロス", types:["はがね","エスパー"], base:[80,145,150,105,110,110], ability:"かたいツメ"},
+{name:"イエッサン♂", types:["エスパー","ノーマル"], base:[60,65,55,105,95,95], ability:"サイコメイカー"},
+{name:"セグレイブ", types:["ドラゴン","こおり"], base:[115,145,92,75,86,87], ability:"ねつこうかん"},
+{name:"キラフロル", types:["いわ","どく"], base:[83,55,90,130,81,86], ability:"どくげしょう"},
+{name:"メガギャラドス", types:["みず","あく"], base:[95,155,109,70,130,81], ability:"かたやぶり"},
+{name:"エースバーン", types:["ほのお"], base:[80,116,75,65,75,119], ability:"リベロ"},
+{name:"ブラッキー", types:["あく"], base:[95,65,110,60,130,65], ability:"シンクロ"},
+{name:"メガゲンガー", types:["ゴースト","どく"], base:[60,65,80,170,95,130], ability:"かげふみ"},
+{name:"ヒートロトム", types:["でんき","ほのお"], base:[50,65,107,105,107,86], ability:"ふゆう"},
+{name:"ウォッシュロトム", types:["でんき","みず"], base:[50,65,107,105,107,86], ability:"ふゆう"},
+{name:"ドドゲザン", types:["あく","はがね"], base:[100,135,120,60,85,50], ability:"そうだいしょう"},
+{name:"ウルガモス", types:["むし","ほのお"], base:[85,60,65,135,105,100], ability:"ほのおのからだ"},
+{name:"ドリュウズ", types:["じめん","はがね"], base:[110,135,60,50,65,88], ability:"かたやぶり"},
+{name:"バンギラス", types:["いわ","あく"], base:[100,134,110,95,100,61], ability:"すなおこし"},
+{name:"ドヒドイデ", types:["どく","みず"], base:[68,63,152,53,142,35], ability:"ひとでなし"},
+{name:"ゲッコウガ", types:["みず","あく"], base:[72,95,67,103,71,122], ability:"へんげんじざい"},
+{name:"サザンドラ", types:["あく","ドラゴン"], base:[92,105,90,125,90,98], ability:"ふゆう"},
+{name:"ハッサム", types:["むし","はがね"], base:[70,130,100,55,80,65], ability:"テクニシャン"},
+{name:"ラウドボーン", types:["ほのお","ゴースト"], base:[104,75,100,110,75,66], ability:"もうか"},
+{name:"ニンフィア", types:["フェアリー"], base:[95,65,65,110,130,60], ability:"フェアリースキン"},
+{name:"メガバシャーモ", types:["ほのお","かくとう"], base:[80,160,80,130,80,100], ability:"かそく"},
+{name:"メガラグラージ", types:["みず","じめん"], base:[100,150,110,95,110,70], ability:"すいすい"},
+{name:"オオニューラ", types:["かくとう","どく"], base:[80,130,60,40,80,120], ability:"かるわざ"},
+{name:"メガライチュウY", types:["でんき"], base:[60,100,55,160,80,130], ability:"ノーガード"},
+{name:"パーモット", types:["でんき","かくとう"], base:[70,115,70,70,60,105], ability:"てつのこぶし"},
+{name:"ギルガルド", types:["はがね","ゴースト"], base:[60,50,140,50,140,60], ability:"バトルスイッチ"},
+{name:"アローラキュウコン", types:["こおり","フェアリー"], base:[73,67,75,81,100,109], ability:"ゆきふらし"},
+{name:"メガフラエッテ", types:["フェアリー"], base:[74,85,87,155,148,102], ability:"フェアリーオーラ"},
+{name:"メガピクシー", types:["フェアリー","ひこう"], base:[95,80,93,135,110,70], ability:"マジックミラー"},
+{name:"ガラルヤドキング", types:["どく","エスパー"], base:[95,65,80,110,110,30], ability:"さいせいりょく"},
+{name:"ヒスイダイケンキ", types:["みず","あく"], base:[90,108,80,100,65,85], ability:"きれあじ"},
+{name:"メガムクホーク", types:["かくとう","ひこう"], base:[85,140,100,60,90,110], ability:"あまのじゃく"},
+{name:"メガカメックス", types:["みず"], base:[79,103,120,135,115,78], ability:"メガランチャー"},
+{name:"メガスターミー", types:["みず","エスパー"], base:[60,100,105,130,105,120], ability:"ちからもち"},
+{name:"メガマフォクシー", types:["ほのお","エスパー"], base:[75,69,72,159,125,134], ability:"ふゆう"},
+{name:"ソウブレイズ", types:["ほのお","ゴースト"], base:[75,125,80,60,100,85], ability:"くだけるよろい"},
+{name:"メガスコヴィラン", types:["くさ","ほのお"], base:[65,138,85,138,85,75], ability:"とびだすハバネロ"}
+];
+function pokeByName(n){ for (var i=0;i<POKEMON.length;i++) if (POKEMON[i].name===n) return POKEMON[i]; return null;}
+
+/* ================= 技データ（威力・タイプ・分類：ポケモン徹底攻略 技図鑑に準拠） ================= */
+function M(name,type,cat,power,opts){ var m={name:name,type:type,cat:cat,power:power}; if(opts) for(var k in opts) m[k]=opts[k]; return m;}
+
+/* ================= 登録アタッカー（型は固定） ================= */
+/* atkStat: 'A'|'C'|'B'(ボディプレス) / natureMult: 攻撃系性格補正 / sp: 攻撃側SP / itemMod等は関数内で処理 */
+var ATTACKERS = [
+{poke:"ガブリアス", nature:"いじっぱり", spLabel:"A32 S32 H2", atkKey:"A", spAtk:32, basePlus:0, item:"いのちのたま", itemKind:"orb",
+moves:[M("じしん","じめん","物理",100), M("げきりん","ドラゴン","物理",120), M("アイアンヘッド","はがね","物理",80,{contact:true}), M("どくづき","どく","物理",80,{contact:true})]},
+{poke:"アシレーヌ", nature:"ひかえめ", spLabel:"C32 H32 D2", atkKey:"C", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("ハイドロポンプ","みず","特殊",110), M("ムーンフォース","フェアリー","特殊",95), M("うたかたのアリア","みず","特殊",90), M("れいとうビーム","こおり","特殊",90)]},
+{poke:"ブリジュラス", nature:"ひかえめ", spLabel:"C32 H32 B2", atkKey:"C", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("りゅうせいぐん","ドラゴン","特殊",130), M("ラスターカノン","はがね","特殊",80), M("エレクトロビーム","でんき","特殊",130), M("きあいだま","かくとう","特殊",120)]},
+{poke:"メガルカリオZ", nature:"おくびょう", spLabel:"C32 S32 H2", atkKey:"C", spAtk:32, item:"なし", itemKind:"none",
+moves:[M("はどうだん","かくとう","特殊",80), M("ラスターカノン","はがね","特殊",80), M("あくのはどう","あく","特殊",80), M("しんくうは","かくとう","特殊",40)]},
+{poke:"ミミッキュ", nature:"いじっぱり", spLabel:"A32 S32 H2", atkKey:"A", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("じゃれつく","フェアリー","物理",90,{contact:true}), M("シャドークロー","ゴースト","物理",70,{contact:true}), M("ドレインパンチ","かくとう","物理",75,{contact:true}), M("かげうち","ゴースト","物理",40)]},
+{poke:"メガリザードンY", nature:"ひかえめ", spLabel:"C32 S32 H2", atkKey:"C", spAtk:32, item:"なし", itemKind:"none", autoWeather:"sun",
+moves:[M("かえんほうしゃ","ほのお","特殊",90), M("だいもんじ","ほのお","特殊",110), M("ソーラービーム","くさ","特殊",120), M("エアスラッシュ","ひこう","特殊",75)]},
+{poke:"イダイトウ♂", nature:"いじっぱり", spLabel:"A32 S32 H2", atkKey:"A", spAtk:32, item:"いのちのたま", itemKind:"orb", adaptability:true,
+moves:[M("ウェーブタックル","みず","物理",120,{contact:true}), M("ゴーストダイブ","ゴースト","物理",90), M("アクアジェット","みず","物理",40,{contact:true}), M("かみくだく","あく","物理",80,{contact:true})]},
+{poke:"メガボーマンダ", nature:"いじっぱり", spLabel:"A32 S32 H2", atkKey:"A", spAtk:32, item:"なし", itemKind:"none", aerilate:true,
+moves:[M("すてみタックル","ノーマル","物理",120,{contact:true}), M("じしん","じめん","物理",100), M("ドラゴンクロー","ドラゴン","物理",80,{contact:true}), M("かみくだく","あく","物理",80,{contact:true})]},
+{poke:"サーフゴー", nature:"ひかえめ", spLabel:"C32 S32 H2", atkKey:"C", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("ゴールドラッシュ","はがね","特殊",120), M("シャドーボール","ゴースト","特殊",80), M("きあいだま","かくとう","特殊",120), M("10まんボルト","でんき","特殊",90)]},
+{poke:"マスカーニャ", nature:"ようき", spLabel:"A32 S32 H2", atkKey:"A", spAtk:32, item:"いのちのたま", itemKind:"orb", protean:true,
+moves:[M("トリックフラワー","くさ","物理",70,{alwaysCrit:true}), M("はたきおとす","あく","物理",65,{contact:true,knockOff:true}), M("とんぼがえり","むし","物理",70,{contact:true}), M("ふいうち","あく","物理",70,{contact:true})]},
+{poke:"セグレイブ", nature:"いじっぱり", spLabel:"A32 S32 H2", atkKey:"A", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("きょけんとつげき","ドラゴン","物理",120,{contact:true}), M("つららおとし","こおり","物理",85), M("じしん","じめん","物理",100), M("こおりのつぶて","こおり","物理",40)]},
+{poke:"メガメタグロス", nature:"ようき", spLabel:"A32 S32 H2", atkKey:"A", spAtk:32, item:"なし", itemKind:"none", toughClaws:true,
+moves:[M("コメットパンチ","はがね","物理",90,{contact:true}), M("しねんのずつき","エスパー","物理",80,{contact:true}), M("バレットパンチ","はがね","物理",40,{contact:true}), M("じしん","じめん","物理",100)]},
+{poke:"ゴリランダー", nature:"いじっぱり", spLabel:"A32 H32 D2", atkKey:"A", spAtk:32, item:"なし", itemKind:"none", autoTerrain:"grassy",
+moves:[M("ウッドハンマー","くさ","物理",120,{contact:true}), M("グラススライダー","くさ","物理",55,{contact:true}), M("はたきおとす","あく","物理",65,{contact:true,knockOff:true}), M("とんぼがえり","むし","物理",70,{contact:true})]},
+{poke:"メガカイリュー", nature:"ひかえめ", spLabel:"C32 S32 H2", atkKey:"C", spAtk:32, item:"なし", itemKind:"none",
+moves:[M("りゅうせいぐん","ドラゴン","特殊",130), M("ぼうふう","ひこう","特殊",110), M("かえんほうしゃ","ほのお","特殊",90), M("10まんボルト","でんき","特殊",90)]},
+{poke:"メガゲンガー", nature:"おくびょう", spLabel:"C32 S32 H2", atkKey:"C", spAtk:32, item:"なし", itemKind:"none",
+moves:[M("シャドーボール","ゴースト","特殊",80), M("ヘドロウェーブ","どく","特殊",95), M("きあいだま","かくとう","特殊",120), M("たたりめ","ゴースト","特殊",65)]},
+{poke:"ドドゲザン", nature:"いじっぱり", spLabel:"A32 H32 D2", atkKey:"A", spAtk:32, item:"くろいメガネ", itemKind:"glasses", overlord:1,
+moves:[M("ドゲザン","あく","物理",85,{contact:true}), M("アイアンヘッド","はがね","物理",80,{contact:true}), M("ふいうち","あく","物理",70,{contact:true}), M("かわらわり","かくとう","物理",75,{contact:true})]},
+{poke:"エースバーン", nature:"ようき", spLabel:"A32 S32 H2", atkKey:"A", spAtk:32, item:"いのちのたま", itemKind:"orb", protean:true,
+moves:[M("かえんボール","ほのお","物理",120), M("とびひざげり","かくとう","物理",130), M("ふいうち","あく","物理",70,{contact:true}), M("とんぼがえり","むし","物理",70,{contact:true})]},
+{poke:"ウルガモス", nature:"おくびょう", spLabel:"C32 S32 H2", atkKey:"C", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("かえんのまい","ほのお","特殊",80), M("だいもんじ","ほのお","特殊",110), M("むしのさざめき","むし","特殊",90), M("ギガドレイン","くさ","特殊",75)]},
+{poke:"ドリュウズ", nature:"ようき", spLabel:"A32 S32 H2", atkKey:"A", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("じしん","じめん","物理",100), M("アイアンヘッド","はがね","物理",80,{contact:true}), M("がんせきほうじ","いわ","物理",75), M("ドリルライナー","じめん","物理",80,{contact:true})]},
+{poke:"ゲッコウガ", nature:"おくびょう", spLabel:"C32 S32 H2", atkKey:"C", spAtk:32, item:"いのちのたま", itemKind:"orb", protean:true,
+moves:[M("ハイドロポンプ","みず","特殊",110), M("あくのはどう","あく","特殊",80), M("れいとうビーム","こおり","特殊",90), M("くさむすび","くさ","特殊",60,{note:"くさむすびは相手の重さで威力変動（ここでは60で計算）"})]},
+{poke:"ハッサム", nature:"いじっぱり", spLabel:"A32 H32 D2", atkKey:"A", spAtk:32, item:"いのちのたま", itemKind:"orb", technician:true,
+moves:[M("バレットパンチ","はがね","物理",40,{contact:true}), M("むしくい","むし","物理",60,{contact:true}), M("つばめがえし","ひこう","物理",60,{contact:true}), M("かわらわり","かくとう","物理",75,{contact:true})]},
+{poke:"アーマーガア", nature:"わんぱく", spLabel:"B32 H32 D2", atkKey:"B", spAtk:32, item:"なし", itemKind:"none",
+moves:[M("ボディプレス","かくとう","物理",80,{contact:true,bodyPress:true}), M("ブレイブバード","ひこう","物理",120,{contact:true}), M("アイアンヘッド","はがね","物理",80,{contact:true}), M("とんぼがえり","むし","物理",70,{contact:true})]},
+{poke:"イエッサン♂", nature:"おくびょう", spLabel:"C32 S32 H2", atkKey:"C", spAtk:32, item:"なし", itemKind:"none", autoTerrain:"psychic",
+moves:[M("ワイドフォース","エスパー","特殊",80), M("マジカルフレイム","ほのお","特殊",75), M("マジカルシャイン","フェアリー","特殊",80), M("サイコノイズ","エスパー","特殊",75)]},
+{poke:"メガバシャーモ", nature:"いじっぱり", spLabel:"A32 S32 H2", atkKey:"A", spAtk:32, item:"なし", itemKind:"none",
+moves:[M("フレアドライブ","ほのお","物理",120,{contact:true}), M("インファイト","かくとう","物理",120,{contact:true}), M("かみなりパンチ","でんき","物理",75,{contact:true}), M("いわなだれ","いわ","物理",75)]},
+{poke:"メガラグラージ", nature:"いじっぱり", spLabel:"A32 S32 H2", atkKey:"A", spAtk:32, item:"なし", itemKind:"none",
+moves:[M("ウェーブタックル","みず","物理",120,{contact:true}), M("じしん","じめん","物理",100), M("クイックターン","みず","物理",60,{contact:true}), M("れいとうパンチ","こおり","物理",75,{contact:true})]},
+{poke:"オオニューラ", nature:"いじっぱり", spLabel:"A32 S32 H2", atkKey:"A", spAtk:32, item:"ノーマルジュエル", itemKind:"gem-normal",
+moves:[M("インファイト","かくとう","物理",120,{contact:true}), M("フェイタルクロー","どく","物理",80,{contact:true}), M("じごくづき","あく","物理",80,{contact:true}), M("ねこだまし","ノーマル","物理",40,{contact:true})]},
+{poke:"カバルドン", nature:"わんぱく", spLabel:"H32 B2 D32", atkKey:"A", spAtk:0, item:"なし", itemKind:"none",
+moves:[M("じしん","じめん","物理",100), M("こおりのキバ","こおり","物理",65,{contact:true}), M("がんせきふうじ","いわ","物理",60), M("ストーンエッジ","いわ","物理",100)]},
+{poke:"メガグソクムシャ", nature:"いじっぱり", spLabel:"H32 A32 D2", atkKey:"A", spAtk:32, item:"なし", itemKind:"none", toughClaws:true,
+moves:[M("ふいうち","あく","物理",70,{contact:true}), M("きゅうけつ","むし","物理",80,{contact:true}), M("アイアンヘッド","はがね","物理",80,{contact:true}), M("インファイト","かくとう","物理",120,{contact:true})]},
+{poke:"カイリュー", nature:"ひかえめ", spLabel:"H1 B1 C32 S32", atkKey:"C", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("かえんほうしゃ","ほのお","特殊",90), M("10まんボルト","でんき","特殊",90), M("しんそく","ノーマル","物理",80), M("りゅうのはどう","ドラゴン","特殊",85,{pulse:true})]},
+{poke:"メガギャラドス", nature:"いじっぱり", spLabel:"H1 A32 B1 S32", atkKey:"A", spAtk:32, item:"なし", itemKind:"none",
+moves:[M("じしん","じめん","物理",100), M("たきのぼり","みず","物理",80,{contact:true}), M("パワーウィップ","くさ","物理",120), M("こおりのキバ","こおり","物理",65,{contact:true})]},
+{poke:"キラフロル", nature:"おくびょう", spLabel:"H1 B1 C32 S32", atkKey:"C", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("パワージェム","いわ","特殊",80), M("だいちのちから","じめん","特殊",90), M("ヘドロウェーブ","どく","特殊",95), M("エナジーボール","くさ","特殊",90)]},
+{poke:"ウォッシュロトム", nature:"ずぶとい", spLabel:"H32 B2 D32", atkKey:"C", spAtk:0, item:"なし", itemKind:"none",
+moves:[M("ハイドロポンプ","みず","特殊",110), M("ボルトチェンジ","でんき","特殊",70), M("10まんボルト","でんき","特殊",90), M("ほうでん","でんき","特殊",80)]},
+{poke:"ブラッキー", nature:"ずぶとい", spLabel:"H32 B32 D2", atkKey:"A", spAtk:0, item:"なし", itemKind:"none",
+moves:[M("イカサマ","あく","物理",95,{foulPlay:true})]},
+{poke:"ヒートロトム", nature:"ずぶとい", spLabel:"H32 B32 D2", atkKey:"C", spAtk:0, item:"なし", itemKind:"none",
+moves:[M("オーバーヒート","ほのお","特殊",130), M("ボルトチェンジ","でんき","特殊",70), M("10まんボルト","でんき","特殊",90), M("イカサマ","あく","物理",95,{foulPlay:true})]},
+{poke:"バンギラス", nature:"いじっぱり", spLabel:"H32 B2 D32", atkKey:"A", spAtk:0, item:"なし", itemKind:"none",
+moves:[M("はたきおとす","あく","物理",65,{contact:true,knockOff:true}), M("れいとうパンチ","こおり","物理",75,{contact:true,punch:true}), M("ストーンエッジ","いわ","物理",100), M("じしん","じめん","物理",100)]},
+{poke:"サザンドラ", nature:"ひかえめ", spLabel:"H2 C32 S32", atkKey:"C", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("あくのはどう","あく","特殊",80,{pulse:true}), M("りゅうせいぐん","ドラゴン","特殊",130), M("かえんほうしゃ","ほのお","特殊",90), M("とんぼがえり","むし","物理",70,{contact:true})]},
+{poke:"ドヒドイデ", nature:"おだやか", spLabel:"H32 B2 D32", atkKey:"C", spAtk:0, item:"なし", itemKind:"none",
+moves:[M("まとわりつく","むし","特殊",70), M("どくづき","どく","物理",80,{contact:true}), M("アクアブレイク","みず","物理",85,{contact:true}), M("ひやみず","みず","特殊",50)]},
+{poke:"ラウドボーン", nature:"ずぶとい", spLabel:"H32 B32 D2", atkKey:"C", spAtk:0, item:"なし", itemKind:"none",
+moves:[M("フレアソング","ほのお","特殊",80), M("シャドーボール","ゴースト","特殊",80), M("たたりめ","ゴースト","特殊",65), M("みわくのボイス","フェアリー","特殊",80)]},
+{poke:"ニンフィア", nature:"ずぶとい", spLabel:"H32 B32 D2", atkKey:"C", spAtk:0, item:"なし", itemKind:"none", pixilate:true,
+moves:[M("ハイパーボイス","ノーマル","特殊",90), M("マジカルフレイム","ほのお","特殊",75), M("でんこうせっか","ノーマル","物理",40,{contact:true}), M("はかいこうせん","ノーマル","特殊",150)]},
+{poke:"メガライチュウY", nature:"おくびょう", spLabel:"H2 C32 S32", atkKey:"C", spAtk:32, item:"なし", itemKind:"none",
+moves:[M("でんじほう","でんき","特殊",120), M("きあいだま","かくとう","特殊",120), M("くさむすび","くさ","特殊",60,{weightTier:true}), M("ねこだまし","ノーマル","物理",40,{contact:true})]},
+{poke:"パーモット", nature:"ようき", spLabel:"H2 A32 S32", atkKey:"A", spAtk:32, item:"いのちのたま", itemKind:"orb", ironFist:true,
+moves:[M("でんこうそうげき","でんき","物理",120,{contact:true}), M("インファイト","かくとう","物理",120,{contact:true}), M("れいとうパンチ","こおり","物理",75,{contact:true,punch:true}), M("マッハパンチ","かくとう","物理",40,{contact:true,punch:true})]},
+{poke:"ギルガルド", nature:"いじっぱり", spLabel:"H2 A32 S32", atkKey:"A", spAtk:32, item:"いのちのたま", itemKind:"orb", stanceBlade:true,
+moves:[M("かげうち","ゴースト","物理",40), M("ポルターガイスト","ゴースト","物理",110,{contact:true}), M("インファイト","かくとう","物理",120,{contact:true}), M("せいなるつるぎ","かくとう","物理",90,{slicing:true})]},
+{poke:"アローラキュウコン", nature:"おくびょう", spLabel:"H2 C32 S32", atkKey:"C", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("フリーズドライ","こおり","特殊",70), M("ふぶき","こおり","特殊",110), M("ムーンフォース","フェアリー","特殊",95), M("イカサマ","あく","物理",95,{foulPlay:true})]},
+{poke:"メガフラエッテ", nature:"おくびょう", spLabel:"H22 B11 C1 S32", atkKey:"C", spAtk:1, item:"なし", itemKind:"none", fairyAura:true,
+moves:[M("ムーンフォース","フェアリー","特殊",95), M("ドレインキッス","フェアリー","特殊",50), M("はめつのひかり","フェアリー","特殊",140), M("サイコキネシス","エスパー","特殊",90)]},
+{poke:"メガピクシー", nature:"ずぶとい", spLabel:"H32 B32 D2", atkKey:"C", spAtk:0, item:"なし", itemKind:"none",
+moves:[M("ムーンフォース","フェアリー","特殊",95), M("かえんほうしゃ","ほのお","特殊",90), M("アシストパワー","エスパー","特殊",20)]},
+{poke:"ガラルヤドキング", nature:"ひかえめ", spLabel:"H31 C32 D3", atkKey:"C", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("かえんほうしゃ","ほのお","特殊",90), M("ヘドロばくだん","どく","特殊",90), M("れいとうビーム","こおり","特殊",90), M("サイコノイズ","エスパー","特殊",75)]},
+{poke:"ヒスイダイケンキ", nature:"いじっぱり", spLabel:"H2 A32 S32", atkKey:"A", spAtk:32, item:"くろいメガネ", itemKind:"glasses", sharpness:true,
+moves:[M("ひけん・ちえなみ","あく","物理",65,{slicing:true}), M("ふいうち","あく","物理",70,{contact:true}), M("せいなるつるぎ","かくとう","物理",90,{slicing:true}), M("アクアカッター","みず","物理",70,{slicing:true})]},
+{poke:"メガムクホーク", nature:"ようき", spLabel:"H2 A32 S32", atkKey:"A", spAtk:32, item:"なし", itemKind:"none",
+moves:[M("インファイト","かくとう","物理",120,{contact:true}), M("ブレイブバード","ひこう","物理",120,{contact:true}), M("ブレイズキック","ほのお","物理",85,{contact:true}), M("とんぼがえり","むし","物理",70,{contact:true})]},
+{poke:"メガカメックス", nature:"ひかえめ", spLabel:"H2 C32 S32", atkKey:"C", spAtk:32, item:"なし", itemKind:"none", megaLauncher:true,
+moves:[M("はどうだん","かくとう","特殊",80,{pulse:true}), M("あくのはどう","あく","特殊",80,{pulse:true}), M("だいちのはどう","ノーマル","特殊",50,{pulse:true,terrainPulse:true}), M("れいとうビーム","こおり","特殊",90)]},
+{poke:"メガスターミー", nature:"いじっぱり", spLabel:"H2 A32 S32", atkKey:"A", spAtk:32, item:"なし", itemKind:"none", hugePower:true,
+moves:[M("アクアジェット","みず","物理",40,{contact:true}), M("アクアブレイク","みず","物理",85,{contact:true}), M("クイックターン","みず","物理",60,{contact:true}), M("アイススピナー","こおり","物理",80)]},
+{poke:"メガマフォクシー", nature:"おくびょう", spLabel:"H2 C32 S32", atkKey:"C", spAtk:32, item:"なし", itemKind:"none",
+moves:[M("かえんほうしゃ","ほのお","特殊",90), M("サイコキネシス","エスパー","特殊",90), M("サイコショック","エスパー","特殊",80,{psyshock:true}), M("マジカルシャイン","フェアリー","特殊",80)]},
+{poke:"ソウブレイズ", nature:"いじっぱり", spLabel:"H2 A32 S32", atkKey:"A", spAtk:32, item:"いのちのたま", itemKind:"orb",
+moves:[M("むねんのつるぎ","ほのお","物理",90,{contact:true}), M("かげうち","ゴースト","物理",40), M("ポルターガイスト","ゴースト","物理",110,{contact:true}), M("インファイト","かくとう","物理",120,{contact:true})]},
+{poke:"メガスコヴィラン", nature:"おくびょう", spLabel:"H5 B32 D18 S11", atkKey:"C", spAtk:0, item:"なし", itemKind:"none",
+moves:[M("かえんほうしゃ","ほのお","特殊",90), M("ギガドレイン","くさ","特殊",75), M("リーフストーム","くさ","特殊",130), M("オーバーヒート","ほのお","特殊",130)]}
+];
+
+/* ================= 攻撃側データ（バトルデータベース チャンピオンズ M-8） ================= */
+var POKEDEX={"ガブリアス": {"rank": 1, "code": "0445-00", "weight": 95.0, "abilities": [], "moves": ["じしん", "ステルスロック", "げきりん", "がんせきふうじ", "スケイルショット", "かえんほうしゃ", "ドラゴンテール", "りゅうせいぐん", "つるぎのまい", "だいちのちから"], "natures": [{"name": "ようき", "up": "S", "down": "C"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "うっかりや", "up": "C", "down": "D"}], "spreads": [{"label": "AS + h", "pct": "33.5", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "CS + h", "pct": "17.9", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "AS + b", "pct": "5.2", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}, {"label": "HB + d", "pct": "3.2", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "AS + d", "pct": "2.1", "sp": {"H": 0, "A": 32, "B": 0, "C": 0, "D": 2, "S": 32}}]}, "アシレーヌ": {"rank": 2, "code": "0730-00", "weight": 44.0, "abilities": [], "moves": ["ムーンフォース", "うたかたのアリア", "アクアジェット", "アンコール", "めいそう", "なみのり", "クイックターン", "サイコノイズ", "みがわり", "ねむる"], "natures": [{"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "うっかりや", "up": "C", "down": "D"}, {"name": "おとなしい", "up": "D", "down": "B"}], "spreads": [{"label": "HB + c", "pct": "8.9", "sp": {"H": 32, "A": 0, "B": 20, "C": 14, "D": 0, "S": 0}}, {"label": "HS + bc", "pct": "4.0", "sp": {"H": 32, "A": 0, "B": 6, "C": 4, "D": 0, "S": 24}}, {"label": "CS + h", "pct": "3.7", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "HD + cs", "pct": "3.6", "sp": {"H": 32, "A": 0, "B": 0, "C": 4, "D": 23, "S": 7}}, {"label": "HC + s", "pct": "3.4", "sp": {"H": 32, "A": 0, "B": 0, "C": 32, "D": 0, "S": 2}}]}, "カバルドン": {"rank": 3, "code": "0450-00", "weight": 300.0, "abilities": [], "moves": ["じしん", "あくび", "ステルスロック", "なまける", "ふきとばし", "こおりのキバ", "まもる", "ほえる", "がんせきふうじ", "ストーンエッジ"], "natures": [{"name": "わんぱく", "up": "B", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "ようき", "up": "S", "down": "C"}], "spreads": [{"label": "HD + b", "pct": "24.7", "sp": {"H": 32, "A": 0, "B": 2, "C": 0, "D": 32, "S": 0}}, {"label": "HB + d", "pct": "14.3", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "HD + b", "pct": "14.1", "sp": {"H": 32, "A": 0, "B": 12, "C": 0, "D": 22, "S": 0}}, {"label": "HB + d", "pct": "6.1", "sp": {"H": 32, "A": 0, "B": 22, "C": 0, "D": 12, "S": 0}}, {"label": "HD + b", "pct": "4.0", "sp": {"H": 32, "A": 0, "B": 6, "C": 0, "D": 28, "S": 0}}]}, "ブリジュラス": {"rank": 4, "code": "1018-00", "weight": 60.0, "abilities": [], "moves": ["りゅうせいぐん", "ラスターカノン", "10まんボルト", "ステルスロック", "ドラゴンテール", "ほえる", "あくのはどう", "りゅうのはどう", "エレクトロビーム", "てっていこうせん"], "natures": [{"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "むじゃき", "up": "S", "down": "D"}], "spreads": [{"label": "CS + h", "pct": "23.7", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "HD + b", "pct": "5.9", "sp": {"H": 32, "A": 0, "B": 2, "C": 0, "D": 32, "S": 0}}, {"label": "HC + ds", "pct": "5.3", "sp": {"H": 30, "A": 0, "B": 0, "C": 25, "D": 1, "S": 10}}, {"label": "CS + d", "pct": "3.2", "sp": {"H": 0, "A": 0, "B": 0, "C": 32, "D": 2, "S": 32}}, {"label": "HD + bcs", "pct": "3.0", "sp": {"H": 32, "A": 0, "B": 5, "C": 5, "D": 22, "S": 2}}]}, "メガルカリオZ": {"rank": 6, "code": "0448-00", "weight": 54.0, "abilities": [], "moves": ["あくのはどう", "はどうだん", "しんくうは", "てっていこうせん", "わるだくみ", "ラスターカノン", "インファイト", "コメットパンチ", "バレットパンチ", "つるぎのまい"], "natures": [{"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "うっかりや", "up": "C", "down": "D"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "やんちゃ", "up": "A", "down": "D"}], "spreads": [{"label": "CS + h", "pct": "53.4", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "AS + h", "pct": "8.1", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "HC + bs", "pct": "5.0", "sp": {"H": 30, "A": 0, "B": 11, "C": 16, "D": 0, "S": 9}}, {"label": "CS + hd", "pct": "4.9", "sp": {"H": 1, "A": 0, "B": 0, "C": 32, "D": 1, "S": 32}}, {"label": "CS + b", "pct": "2.4", "sp": {"H": 0, "A": 0, "B": 2, "C": 32, "D": 0, "S": 32}}]}, "ミミッキュ": {"rank": 5, "code": "0778-00", "weight": 0.7, "abilities": [], "moves": ["じゃれつく", "かげうち", "つるぎのまい", "シャドークロー", "ウッドハンマー", "のろい", "トリックルーム", "ドレインパンチ", "おにび", "みちづれ"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "おくびょう", "up": "S", "down": "A"}], "spreads": [{"label": "AS + hb", "pct": "26.5", "sp": {"H": 1, "A": 32, "B": 1, "C": 0, "D": 0, "S": 32}}, {"label": "AS + h", "pct": "18.7", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "HA + b", "pct": "5.2", "sp": {"H": 29, "A": 32, "B": 5, "C": 0, "D": 0, "S": 0}}, {"label": "AS + b", "pct": "4.1", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}, {"label": "A + hbs", "pct": "3.3", "sp": {"H": 15, "A": 30, "B": 6, "C": 0, "D": 0, "S": 15}}]}, "メガグソクムシャ": {"rank": 7, "code": "0768-00", "weight": 108.0, "abilities": [], "moves": ["ふいうち", "きゅうけつ", "アイアンヘッド", "つるぎのまい", "インファイト", "であいがしら", "とんぼがえり", "ドリルライナー", "アクアジェット", "しっぺがえし"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "のうてんき", "up": "B", "down": "D"}], "spreads": [{"label": "HA + d", "pct": "20.6", "sp": {"H": 32, "A": 32, "B": 0, "C": 0, "D": 2, "S": 0}}, {"label": "HA + d", "pct": "17.0", "sp": {"H": 31, "A": 32, "B": 0, "C": 0, "D": 3, "S": 0}}, {"label": "HA + b", "pct": "8.4", "sp": {"H": 32, "A": 32, "B": 2, "C": 0, "D": 0, "S": 0}}, {"label": "HA + s", "pct": "4.8", "sp": {"H": 31, "A": 32, "B": 0, "C": 0, "D": 0, "S": 3}}, {"label": "HA + s", "pct": "4.2", "sp": {"H": 32, "A": 32, "B": 0, "C": 0, "D": 0, "S": 2}}]}, "メガリザードンY": {"rank": 8, "code": "0006-00", "weight": 90.5, "abilities": [], "moves": ["ソーラービーム", "かえんほうしゃ", "りゅうのはどう", "はねやすめ", "フレアドライブ", "エアスラッシュ", "ウェザーボール", "りゅうのまい", "かみなりパンチ", "ドラゴンクロー"], "natures": [{"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "れいせい", "up": "C", "down": "S"}], "spreads": [{"label": "CS + h", "pct": "21.0", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "AS + h", "pct": "15.3", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "H + bcd", "pct": "3.5", "sp": {"H": 32, "A": 0, "B": 15, "C": 11, "D": 8, "S": 0}}, {"label": "AS + h", "pct": "3.3", "sp": {"H": 4, "A": 30, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "HB + c", "pct": "2.7", "sp": {"H": 32, "A": 0, "B": 32, "C": 2, "D": 0, "S": 0}}]}, "イダイトウ♂": {"rank": 9, "code": "0902-00", "weight": 110.0, "abilities": [], "moves": ["おはかまいり", "ウェーブタックル", "アクアジェット", "クイックターン", "こうそくいどう", "みがわり", "こおりのキバ", "サイコファング", "もろはのずつき", "アクアブレイク"], "natures": [{"name": "ようき", "up": "S", "down": "C"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "しんちょう", "up": "D", "down": "C"}], "spreads": [{"label": "AS + h", "pct": "40.1", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "AS + b", "pct": "16.0", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}, {"label": "AS + bd", "pct": "3.9", "sp": {"H": 0, "A": 32, "B": 1, "C": 0, "D": 1, "S": 32}}, {"label": "AS + b", "pct": "2.7", "sp": {"H": 0, "A": 32, "B": 5, "C": 0, "D": 0, "S": 29}}, {"label": "AS + d", "pct": "2.6", "sp": {"H": 0, "A": 32, "B": 0, "C": 0, "D": 2, "S": 32}}]}, "メガボーマンダ": {"rank": 10, "code": "0373-00", "weight": 102.6, "abilities": [], "moves": ["りゅうのまい", "じしん", "すてみタックル", "はねやすめ", "りゅうせいぐん", "だいもんじ", "あばれる", "みがわり", "かえんほうしゃ", "ハイパーボイス"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "さみしがり", "up": "A", "down": "B"}], "spreads": [{"label": "AS + hb", "pct": "23.3", "sp": {"H": 1, "A": 32, "B": 1, "C": 0, "D": 0, "S": 32}}, {"label": "AS + h", "pct": "12.3", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "CS + hb", "pct": "3.2", "sp": {"H": 1, "A": 0, "B": 1, "C": 32, "D": 0, "S": 32}}, {"label": "CS + h", "pct": "2.9", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "HS + a", "pct": "2.7", "sp": {"H": 21, "A": 15, "B": 0, "C": 0, "D": 0, "S": 30}}]}, "サーフゴー": {"rank": 11, "code": "1000-00", "weight": 30.0, "abilities": [], "moves": ["シャドーボール", "ゴールドラッシュ", "わるだくみ", "10まんボルト", "じこさいせい", "トリック", "ラスターカノン", "パワージェム", "きあいだま", "みがわり"], "natures": [{"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "むじゃき", "up": "S", "down": "D"}], "spreads": [{"label": "CS + hb", "pct": "24.6", "sp": {"H": 1, "A": 0, "B": 1, "C": 32, "D": 0, "S": 32}}, {"label": "CS + h", "pct": "13.2", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + hd", "pct": "4.7", "sp": {"H": 1, "A": 0, "B": 0, "C": 32, "D": 1, "S": 32}}, {"label": "HC + s", "pct": "1.8", "sp": {"H": 29, "A": 0, "B": 0, "C": 27, "D": 0, "S": 10}}, {"label": "CS + h", "pct": "1.8", "sp": {"H": 15, "A": 0, "B": 0, "C": 26, "D": 0, "S": 25}}]}, "マスカーニャ": {"rank": 12, "code": "0908-00", "weight": 31.2, "abilities": [], "moves": ["トリプルアクセル", "トリックフラワー", "はたきおとす", "とんぼがえり", "ふいうち", "かみなりパンチ", "パワージェム", "はどうだん", "イカサマ", "リーフストーム"], "natures": [{"name": "ようき", "up": "S", "down": "C"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "うっかりや", "up": "C", "down": "D"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "さみしがり", "up": "A", "down": "B"}], "spreads": [{"label": "AS + h", "pct": "53.1", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "AS + b", "pct": "11.2", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}, {"label": "AS + bd", "pct": "7.2", "sp": {"H": 0, "A": 32, "B": 1, "C": 0, "D": 1, "S": 32}}, {"label": "CS + h", "pct": "6.6", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + a", "pct": "4.1", "sp": {"H": 0, "A": 2, "B": 0, "C": 32, "D": 0, "S": 32}}]}, "アーマーガア": {"rank": 13, "code": "0823-00", "weight": 75.0, "abilities": [], "moves": ["はねやすめ", "とんぼがえり", "てっぺき", "ボディプレス", "ブレイブバード", "アイアンヘッド", "きりばらい", "ちょうはつ", "ビルドアップ", "のろい"], "natures": [{"name": "わんぱく", "up": "B", "down": "C"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "やんちゃ", "up": "A", "down": "D"}], "spreads": [{"label": "HB + d", "pct": "35.0", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "HD + b", "pct": "7.2", "sp": {"H": 32, "A": 0, "B": 2, "C": 0, "D": 32, "S": 0}}, {"label": "HB + d", "pct": "5.9", "sp": {"H": 32, "A": 0, "B": 30, "C": 0, "D": 4, "S": 0}}, {"label": "HB + s", "pct": "4.8", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 0, "S": 2}}, {"label": "HB + s", "pct": "3.3", "sp": {"H": 32, "A": 0, "B": 28, "C": 0, "D": 0, "S": 6}}]}, "メガカイリュー": {"rank": 14, "code": "0149-00", "weight": 210.0, "abilities": [], "moves": ["かえんほうしゃ", "10まんボルト", "しんそく", "はねやすめ", "りゅうのはどう", "りゅうせいぐん", "じしん", "エアスラッシュ", "アイススピナー", "りゅうのまい"], "natures": [{"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "うっかりや", "up": "C", "down": "D"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "おだやか", "up": "D", "down": "A"}], "spreads": [{"label": "CS + hb", "pct": "18.5", "sp": {"H": 1, "A": 0, "B": 1, "C": 32, "D": 0, "S": 32}}, {"label": "CS + h", "pct": "15.2", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + h", "pct": "7.1", "sp": {"H": 9, "A": 0, "B": 0, "C": 25, "D": 0, "S": 32}}, {"label": "AS + h", "pct": "3.7", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "HA + s", "pct": "3.6", "sp": {"H": 25, "A": 26, "B": 0, "C": 0, "D": 0, "S": 15}}]}, "カイリュー": {"rank": 14, "code": "0149-00", "weight": 210.0, "abilities": [], "moves": ["かえんほうしゃ", "10まんボルト", "しんそく", "はねやすめ", "りゅうのはどう", "りゅうせいぐん", "じしん", "エアスラッシュ", "アイススピナー", "りゅうのまい"], "natures": [{"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "うっかりや", "up": "C", "down": "D"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "おだやか", "up": "D", "down": "A"}], "spreads": [{"label": "CS + hb", "pct": "18.5", "sp": {"H": 1, "A": 0, "B": 1, "C": 32, "D": 0, "S": 32}}, {"label": "CS + h", "pct": "15.2", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + h", "pct": "7.1", "sp": {"H": 9, "A": 0, "B": 0, "C": 25, "D": 0, "S": 32}}, {"label": "AS + h", "pct": "3.7", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "HA + s", "pct": "3.6", "sp": {"H": 25, "A": 26, "B": 0, "C": 0, "D": 0, "S": 15}}]}, "ゴリランダー": {"rank": 15, "code": "0812-00", "weight": 90.0, "abilities": [], "moves": ["グラススライダー", "ドラムアタック", "とんぼがえり", "10まんばりき", "はたきおとす", "ばかぢから", "つるぎのまい", "ウッドハンマー", "ちょうはつ", "やどりぎのタネ"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "せっかち", "up": "S", "down": "B"}], "spreads": [{"label": "HA + s", "pct": "23.9", "sp": {"H": 32, "A": 32, "B": 0, "C": 0, "D": 0, "S": 2}}, {"label": "HA + bs", "pct": "13.0", "sp": {"H": 20, "A": 32, "B": 4, "C": 0, "D": 0, "S": 10}}, {"label": "HA + b", "pct": "6.3", "sp": {"H": 32, "A": 32, "B": 2, "C": 0, "D": 0, "S": 0}}, {"label": "HA + d", "pct": "5.8", "sp": {"H": 32, "A": 32, "B": 0, "C": 0, "D": 2, "S": 0}}, {"label": "AS + h", "pct": "4.9", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}]}, "メガメタグロス": {"rank": 17, "code": "0376-00", "weight": 550.0, "abilities": [], "moves": ["バレットパンチ", "サイコファング", "れいとうパンチ", "じしん", "かみなりパンチ", "ボディプレス", "てっぺき", "アイアンヘッド", "コメットパンチ", "アームハンマー"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "さみしがり", "up": "A", "down": "B"}], "spreads": [{"label": "AS + h", "pct": "24.0", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "AS + h", "pct": "11.3", "sp": {"H": 8, "A": 32, "B": 0, "C": 0, "D": 0, "S": 26}}, {"label": "HA + s", "pct": "3.2", "sp": {"H": 32, "A": 32, "B": 0, "C": 0, "D": 0, "S": 2}}, {"label": "AS + h", "pct": "2.9", "sp": {"H": 10, "A": 30, "B": 0, "C": 0, "D": 0, "S": 26}}, {"label": "AS + hc", "pct": "2.1", "sp": {"H": 10, "A": 25, "B": 0, "C": 8, "D": 0, "S": 23}}]}, "イエッサン♂": {"rank": 18, "code": "0876-00", "weight": 28.0, "abilities": [], "moves": ["ワイドフォース", "マジカルフレイム", "アンコール", "マジカルシャイン", "トリック", "いやしのねがい", "サイコノイズ", "トリックルーム", "シャドーボール", "エナジーボール"], "natures": [{"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "おとなしい", "up": "D", "down": "B"}], "spreads": [{"label": "CS + h", "pct": "44.9", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + b", "pct": "10.1", "sp": {"H": 0, "A": 0, "B": 2, "C": 32, "D": 0, "S": 32}}, {"label": "CS + d", "pct": "6.3", "sp": {"H": 0, "A": 0, "B": 0, "C": 32, "D": 2, "S": 32}}, {"label": "CS + hb", "pct": "6.3", "sp": {"H": 8, "A": 0, "B": 7, "C": 25, "D": 0, "S": 26}}, {"label": "CS + h", "pct": "3.6", "sp": {"H": 8, "A": 0, "B": 0, "C": 32, "D": 0, "S": 26}}]}, "セグレイブ": {"rank": 16, "code": "0998-00", "weight": 210.0, "abilities": [], "moves": ["こおりのつぶて", "じしん", "きょけんとつげき", "つららおとし", "つるぎのまい", "りゅうのまい", "かみなりのキバ", "つららばり", "スケイルショット", "アイアンヘッド"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "おくびょう", "up": "S", "down": "A"}], "spreads": [{"label": "AS + hb", "pct": "21.1", "sp": {"H": 1, "A": 32, "B": 1, "C": 0, "D": 0, "S": 32}}, {"label": "AS + h", "pct": "15.1", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "HAS", "pct": "11.8", "sp": {"H": 17, "A": 32, "B": 0, "C": 0, "D": 0, "S": 17}}, {"label": "AS + hd", "pct": "9.0", "sp": {"H": 1, "A": 32, "B": 0, "C": 0, "D": 1, "S": 32}}, {"label": "HA + s", "pct": "3.5", "sp": {"H": 32, "A": 32, "B": 0, "C": 0, "D": 0, "S": 2}}]}, "キラフロル": {"rank": 20, "code": "0970-00", "weight": 45.0, "abilities": [], "moves": ["パワージェム", "ステルスロック", "だいちのちから", "ヘドロウェーブ", "エナジーボール", "マッドショット", "ヘドロばくだん", "キラースピン", "ニードルガード", "マジカルシャイン"], "natures": [{"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "いじっぱり", "up": "A", "down": "C"}], "spreads": [{"label": "CS + hb", "pct": "39.3", "sp": {"H": 1, "A": 0, "B": 1, "C": 32, "D": 0, "S": 32}}, {"label": "CS + h", "pct": "20.5", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + hd", "pct": "12.4", "sp": {"H": 1, "A": 0, "B": 0, "C": 32, "D": 1, "S": 32}}, {"label": "CS + d", "pct": "3.0", "sp": {"H": 0, "A": 0, "B": 0, "C": 32, "D": 2, "S": 32}}, {"label": "CS + b", "pct": "2.7", "sp": {"H": 0, "A": 0, "B": 2, "C": 32, "D": 0, "S": 32}}]}, "メガギャラドス": {"rank": 19, "code": "0130-00", "weight": 235.0, "abilities": [], "moves": ["じしん", "りゅうのまい", "たきのぼり", "パワーウィップ", "こおりのキバ", "ちょうはつ", "ゆきなだれ", "やけっぱち", "かみくだく", "アクアテール"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "のんき", "up": "B", "down": "S"}], "spreads": [{"label": "AS + hb", "pct": "14.4", "sp": {"H": 1, "A": 32, "B": 1, "C": 0, "D": 0, "S": 32}}, {"label": "AS + h", "pct": "11.2", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "HS + abd", "pct": "3.4", "sp": {"H": 21, "A": 10, "B": 8, "C": 0, "D": 1, "S": 26}}, {"label": "HB + a", "pct": "3.3", "sp": {"H": 32, "A": 2, "B": 32, "C": 0, "D": 0, "S": 0}}, {"label": "HA + b", "pct": "2.6", "sp": {"H": 31, "A": 32, "B": 3, "C": 0, "D": 0, "S": 0}}]}, "エースバーン": {"rank": 21, "code": "0815-00", "weight": 33.0, "abilities": [], "moves": ["かえんボール", "とびひざげり", "ダストシュート", "ふいうち", "とんぼがえり", "おにび", "うちおとす", "アイアンヘッド", "コートチェンジ", "しねんのずつき"], "natures": [{"name": "ようき", "up": "S", "down": "C"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "ゆうかん", "up": "A", "down": "S"}], "spreads": [{"label": "AS + h", "pct": "75.5", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "AS + b", "pct": "4.2", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}, {"label": "HAS", "pct": "2.0", "sp": {"H": 20, "A": 22, "B": 0, "C": 0, "D": 0, "S": 24}}, {"label": "AS + d", "pct": "1.9", "sp": {"H": 0, "A": 32, "B": 0, "C": 0, "D": 2, "S": 32}}, {"label": "AS + bd", "pct": "1.4", "sp": {"H": 0, "A": 32, "B": 1, "C": 0, "D": 1, "S": 32}}]}, "ブラッキー": {"rank": 23, "code": "0197-00", "weight": 27.0, "abilities": [], "moves": ["イカサマ", "ねがいごと", "まもる", "あくび", "どくどく", "つきのひかり", "みきり", "ほえる", "ちょうはつ", "バトンタッチ"], "natures": [{"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "ひかえめ", "up": "C", "down": "A"}], "spreads": [{"label": "HB + d", "pct": "50.9", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "HB + d", "pct": "6.2", "sp": {"H": 31, "A": 0, "B": 32, "C": 0, "D": 3, "S": 0}}, {"label": "HD + b", "pct": "4.4", "sp": {"H": 32, "A": 0, "B": 2, "C": 0, "D": 32, "S": 0}}, {"label": "HB + ds", "pct": "3.9", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 1, "S": 1}}, {"label": "HB + s", "pct": "2.6", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 0, "S": 2}}]}, "メガゲンガー": {"rank": 25, "code": "0094-00", "weight": 40.5, "abilities": [], "moves": ["シャドーボール", "ヘドロウェーブ", "こごえるかぜ", "みちづれ", "まもる", "ほろびのうた", "たたりめ", "きあいだま", "ヘドロばくだん", "どくびし"], "natures": [{"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "うっかりや", "up": "C", "down": "D"}, {"name": "のんき", "up": "B", "down": "S"}], "spreads": [{"label": "CS + h", "pct": "48.4", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + b", "pct": "5.8", "sp": {"H": 0, "A": 0, "B": 2, "C": 32, "D": 0, "S": 32}}, {"label": "CS + h", "pct": "3.8", "sp": {"H": 14, "A": 0, "B": 0, "C": 20, "D": 0, "S": 32}}, {"label": "CS + d", "pct": "2.9", "sp": {"H": 0, "A": 0, "B": 0, "C": 32, "D": 2, "S": 32}}, {"label": "CS + hb", "pct": "2.8", "sp": {"H": 1, "A": 0, "B": 1, "C": 32, "D": 0, "S": 32}}]}, "ヒートロトム": {"rank": 26, "code": "0479-01", "weight": 0.3, "abilities": [], "moves": ["オーバーヒート", "ボルトチェンジ", "おにび", "いたみわけ", "10まんボルト", "わるだくみ", "トリック", "イカサマ", "ほうでん", "みがわり"], "natures": [{"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "おっとり", "up": "C", "down": "B"}], "spreads": [{"label": "HB + d", "pct": "14.7", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "CS + h", "pct": "7.5", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "HB + c", "pct": "5.2", "sp": {"H": 32, "A": 0, "B": 32, "C": 2, "D": 0, "S": 0}}, {"label": "HB + d", "pct": "4.5", "sp": {"H": 32, "A": 0, "B": 23, "C": 0, "D": 11, "S": 0}}, {"label": "HB + d", "pct": "3.7", "sp": {"H": 32, "A": 0, "B": 21, "C": 0, "D": 13, "S": 0}}]}, "ウォッシュロトム": {"rank": 22, "code": "0479-02", "weight": 0.3, "abilities": [], "moves": ["ハイドロポンプ", "ボルトチェンジ", "おにび", "いたみわけ", "10まんボルト", "わるだくみ", "トリック", "みがわり", "ほうでん", "イカサマ"], "natures": [{"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "せっかち", "up": "S", "down": "B"}], "spreads": [{"label": "HD + b", "pct": "13.6", "sp": {"H": 32, "A": 0, "B": 2, "C": 0, "D": 32, "S": 0}}, {"label": "CS + h", "pct": "9.3", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "HD + b", "pct": "7.8", "sp": {"H": 32, "A": 0, "B": 14, "C": 0, "D": 20, "S": 0}}, {"label": "HB + d", "pct": "7.3", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "HB + c", "pct": "3.2", "sp": {"H": 32, "A": 0, "B": 32, "C": 2, "D": 0, "S": 0}}]}, "ドドゲザン": {"rank": 28, "code": "0983-00", "weight": 120.0, "abilities": [], "moves": ["ふいうち", "ドゲザン", "アイアンヘッド", "つるぎのまい", "ハサミギロチン", "メタルバースト", "かわらわり", "けたぐり", "ステルスロック", "まもる"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "ひかえめ", "up": "C", "down": "A"}], "spreads": [{"label": "HA + s", "pct": "21.3", "sp": {"H": 32, "A": 32, "B": 0, "C": 0, "D": 0, "S": 2}}, {"label": "HA + b", "pct": "13.3", "sp": {"H": 32, "A": 32, "B": 2, "C": 0, "D": 0, "S": 0}}, {"label": "HA + d", "pct": "10.6", "sp": {"H": 32, "A": 32, "B": 0, "C": 0, "D": 2, "S": 0}}, {"label": "AS + h", "pct": "8.8", "sp": {"H": 10, "A": 32, "B": 0, "C": 0, "D": 0, "S": 24}}, {"label": "AS + hb", "pct": "3.2", "sp": {"H": 8, "A": 32, "B": 1, "C": 0, "D": 0, "S": 25}}]}, "ウルガモス": {"rank": 30, "code": "0637-00", "weight": 46.0, "abilities": [], "moves": ["ちょうのまい", "かえんのまい", "ギガドレイン", "あさのひざし", "むしのさざめき", "マジカルフレイム", "おにび", "サイコキネシス", "かえんほうしゃ", "みがわり"], "natures": [{"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "なまいき", "up": "D", "down": "S"}], "spreads": [{"label": "HB + s", "pct": "13.7", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 0, "S": 2}}, {"label": "CS + hb", "pct": "6.6", "sp": {"H": 1, "A": 0, "B": 1, "C": 32, "D": 0, "S": 32}}, {"label": "CS + h", "pct": "5.8", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "HB + d", "pct": "4.9", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "HB + c", "pct": "4.5", "sp": {"H": 32, "A": 0, "B": 32, "C": 2, "D": 0, "S": 0}}]}, "ドリュウズ": {"rank": 53, "code": "0530-00", "weight": 40.4, "abilities": [], "moves": ["じしん", "アイアンヘッド", "いわなだれ", "つるぎのまい", "つのドリル", "がんせきふうじ", "みがわり", "こうそくスピン", "ステルスロック", "どくづき"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "おくびょう", "up": "S", "down": "A"}], "spreads": [{"label": "AS + h", "pct": "38.8", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "AS + b", "pct": "18.5", "sp": {"H": 0, "A": 32, "B": 9, "C": 0, "D": 0, "S": 25}}, {"label": "AS + b", "pct": "12.2", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}, {"label": "AS + b", "pct": "4.5", "sp": {"H": 0, "A": 32, "B": 8, "C": 0, "D": 0, "S": 26}}, {"label": "AS + bd", "pct": "3.4", "sp": {"H": 0, "A": 32, "B": 1, "C": 0, "D": 1, "S": 32}}]}, "バンギラス": {"rank": 31, "code": "0248-00", "weight": 202.0, "abilities": [], "moves": ["はたきおとす", "ステルスロック", "れいとうパンチ", "ストーンエッジ", "じしん", "がんせきふうじ", "ちょうはつ", "りゅうのまい", "れいとうビーム", "いわなだれ"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "れいせい", "up": "C", "down": "S"}], "spreads": [{"label": "HD + b", "pct": "13.8", "sp": {"H": 32, "A": 0, "B": 2, "C": 0, "D": 32, "S": 0}}, {"label": "HA + d", "pct": "9.7", "sp": {"H": 32, "A": 32, "B": 0, "C": 0, "D": 2, "S": 0}}, {"label": "HD + a", "pct": "6.4", "sp": {"H": 32, "A": 2, "B": 0, "C": 0, "D": 32, "S": 0}}, {"label": "HA + b", "pct": "4.8", "sp": {"H": 32, "A": 32, "B": 2, "C": 0, "D": 0, "S": 0}}, {"label": "AS + h", "pct": "4.7", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}]}, "ドヒドイデ": {"rank": 40, "code": "0748-00", "weight": 14.5, "abilities": [], "moves": ["じこさいせい", "どくどく", "まとわりつく", "くろいきり", "トーチカ", "どくびし", "どくづき", "アクアブレイク", "ひかりのかべ", "ひやみず"], "natures": [{"name": "おだやか", "up": "D", "down": "A"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "おくびょう", "up": "S", "down": "A"}], "spreads": [{"label": "HD + b", "pct": "30.6", "sp": {"H": 32, "A": 0, "B": 2, "C": 0, "D": 32, "S": 0}}, {"label": "HB + d", "pct": "14.1", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "HD + b", "pct": "8.7", "sp": {"H": 32, "A": 0, "B": 10, "C": 0, "D": 24, "S": 0}}, {"label": "HD + b", "pct": "8.6", "sp": {"H": 32, "A": 0, "B": 14, "C": 0, "D": 20, "S": 0}}, {"label": "HD + b", "pct": "6.9", "sp": {"H": 32, "A": 0, "B": 6, "C": 0, "D": 28, "S": 0}}]}, "ゲッコウガ": {"rank": 24, "code": "0658-00", "weight": 40.0, "abilities": [], "moves": ["れいとうビーム", "あくのはどう", "ヘドロウェーブ", "みずしゅりけん", "なみのり", "くさむすび", "ハイドロポンプ", "マッドショット", "ダストシュート", "どくびし"], "natures": [{"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "うっかりや", "up": "C", "down": "D"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "ずぶとい", "up": "B", "down": "A"}], "spreads": [{"label": "CS + h", "pct": "64.2", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + b", "pct": "7.1", "sp": {"H": 0, "A": 0, "B": 2, "C": 32, "D": 0, "S": 32}}, {"label": "CS + d", "pct": "3.8", "sp": {"H": 0, "A": 0, "B": 0, "C": 32, "D": 2, "S": 32}}, {"label": "CS + h", "pct": "2.9", "sp": {"H": 6, "A": 0, "B": 0, "C": 32, "D": 0, "S": 28}}, {"label": "CS + a", "pct": "2.7", "sp": {"H": 0, "A": 2, "B": 0, "C": 32, "D": 0, "S": 32}}]}, "サザンドラ": {"rank": 38, "code": "0635-00", "weight": 160.0, "abilities": [], "moves": ["あくのはどう", "りゅうせいぐん", "かえんほうしゃ", "とんぼがえり", "だいもんじ", "きあいだま", "だいちのちから", "ラスターカノン", "わるだくみ", "ちょうはつ"], "natures": [{"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "うっかりや", "up": "C", "down": "D"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "ようき", "up": "S", "down": "C"}], "spreads": [{"label": "CS + h", "pct": "74.9", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + b", "pct": "5.6", "sp": {"H": 0, "A": 0, "B": 2, "C": 32, "D": 0, "S": 32}}, {"label": "CS + d", "pct": "3.4", "sp": {"H": 0, "A": 0, "B": 0, "C": 32, "D": 2, "S": 32}}, {"label": "CS + bd", "pct": "3.0", "sp": {"H": 0, "A": 0, "B": 1, "C": 32, "D": 1, "S": 32}}, {"label": "CS", "pct": "1.3", "sp": {"H": 0, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}]}, "ハッサム": {"rank": 44, "code": "0212-00", "weight": 118.0, "abilities": [], "moves": ["バレットパンチ", "とんぼがえり", "はねやすめ", "はたきおとす", "つるぎのまい", "インファイト", "のろい", "きりばらい", "ダブルウイング", "むしくい"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "さみしがり", "up": "A", "down": "B"}], "spreads": [{"label": "HB + a", "pct": "25.7", "sp": {"H": 32, "A": 2, "B": 32, "C": 0, "D": 0, "S": 0}}, {"label": "HB + ad", "pct": "10.9", "sp": {"H": 32, "A": 1, "B": 32, "C": 0, "D": 1, "S": 0}}, {"label": "HB + d", "pct": "9.4", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "HA + b", "pct": "6.9", "sp": {"H": 32, "A": 32, "B": 2, "C": 0, "D": 0, "S": 0}}, {"label": "HA + d", "pct": "3.8", "sp": {"H": 32, "A": 32, "B": 0, "C": 0, "D": 2, "S": 0}}]}, "ラウドボーン": {"rank": 47, "code": "0911-00", "weight": 326.5, "abilities": [], "moves": ["フレアソング", "なまける", "おにび", "シャドーボール", "たたりめ", "あくび", "みわくのボイス", "もえつきる", "だいちのちから", "まもる"], "natures": [{"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "わんぱく", "up": "B", "down": "C"}], "spreads": [{"label": "HB + d", "pct": "28.6", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "HB + c", "pct": "10.7", "sp": {"H": 32, "A": 0, "B": 32, "C": 2, "D": 0, "S": 0}}, {"label": "HD + b", "pct": "6.4", "sp": {"H": 32, "A": 0, "B": 2, "C": 0, "D": 32, "S": 0}}, {"label": "HB + s", "pct": "4.1", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 0, "S": 2}}, {"label": "HB", "pct": "1.7", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 0, "S": 0}}]}, "ニンフィア": {"rank": 57, "code": "0700-00", "weight": 23.5, "abilities": [], "moves": ["ハイパーボイス", "あくび", "ねがいごと", "マジカルフレイム", "まもる", "でんこうせっか", "めいそう", "はかいこうせん", "シャドーボール", "みきり"], "natures": [{"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "うっかりや", "up": "C", "down": "D"}, {"name": "いじっぱり", "up": "A", "down": "C"}], "spreads": [{"label": "HB + d", "pct": "16.4", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "HB + s", "pct": "5.6", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 0, "S": 2}}, {"label": "HC + s", "pct": "5.3", "sp": {"H": 32, "A": 0, "B": 0, "C": 32, "D": 0, "S": 2}}, {"label": "HB + c", "pct": "4.3", "sp": {"H": 32, "A": 0, "B": 32, "C": 2, "D": 0, "S": 0}}, {"label": "HC + b", "pct": "3.3", "sp": {"H": 32, "A": 0, "B": 2, "C": 32, "D": 0, "S": 0}}]}, "メガバシャーモ": {"rank": 27, "code": "0257-00", "weight": 52.0, "abilities": [], "moves": ["フレアドライブ", "インファイト", "かみなりパンチ", "みきり", "つるぎのまい", "まもる", "ストーンエッジ", "とびひざげり", "バトンタッチ", "いわなだれ"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "せっかち", "up": "S", "down": "B"}], "spreads": [{"label": "AS + h", "pct": "55.7", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "AS + b", "pct": "4.9", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}, {"label": "HAS", "pct": "4.5", "sp": {"H": 16, "A": 32, "B": 0, "C": 0, "D": 0, "S": 18}}, {"label": "AS + h", "pct": "2.7", "sp": {"H": 4, "A": 32, "B": 0, "C": 0, "D": 0, "S": 30}}, {"label": "AS + d", "pct": "2.7", "sp": {"H": 0, "A": 32, "B": 0, "C": 0, "D": 2, "S": 32}}]}, "メガラグラージ": {"rank": 32, "code": "0260-00", "weight": 81.9, "abilities": [], "moves": ["じしん", "クイックターン", "れいとうパンチ", "ウェーブタックル", "ステルスロック", "あくび", "ビルドアップ", "ミラーコート", "ほえる", "アクアブレイク"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "やんちゃ", "up": "A", "down": "D"}], "spreads": [{"label": "AS + h", "pct": "32.1", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "HB + d", "pct": "9.0", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "AS + b", "pct": "6.2", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}, {"label": "HD + b", "pct": "4.1", "sp": {"H": 32, "A": 0, "B": 2, "C": 0, "D": 32, "S": 0}}, {"label": "AS + h", "pct": "3.6", "sp": {"H": 8, "A": 32, "B": 0, "C": 0, "D": 0, "S": 26}}]}, "オオニューラ": {"rank": 33, "code": "0903-00", "weight": 43.0, "abilities": [], "moves": ["インファイト", "フェイタルクロー", "ねこだまし", "じごくづき", "つるぎのまい", "アクロバット", "ほのおのパンチ", "とんぼがえり", "いわなだれ", "シャドークロー"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "おくびょう", "up": "S", "down": "A"}], "spreads": [{"label": "AS + h", "pct": "36.7", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "AS + b", "pct": "6.3", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}, {"label": "AS + d", "pct": "4.2", "sp": {"H": 0, "A": 32, "B": 0, "C": 0, "D": 2, "S": 32}}, {"label": "HA + s", "pct": "3.5", "sp": {"H": 29, "A": 32, "B": 0, "C": 0, "D": 0, "S": 5}}, {"label": "HA + b", "pct": "2.3", "sp": {"H": 32, "A": 32, "B": 2, "C": 0, "D": 0, "S": 0}}]},"メガライチュウY": {"rank": 29, "code": "0026-00", "weight": 26.0, "abilities": [], "moves": ["でんじほう", "きあいだま", "くさむすび", "ねこだまし", "みがわり", "ボルトチェンジ", "アンコール", "わるだくみ", "みわくのボイス", "なみのり"], "natures": [{"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "うっかりや", "up": "C", "down": "D"}], "spreads": [{"label": "CS + h", "pct": "61.8", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + b", "pct": "5.1", "sp": {"H": 0, "A": 0, "B": 2, "C": 32, "D": 0, "S": 32}}, {"label": "CS + d", "pct": "2.8", "sp": {"H": 0, "A": 0, "B": 0, "C": 32, "D": 2, "S": 32}}, {"label": "CS", "pct": "1.4", "sp": {"H": 0, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + a", "pct": "0.5", "sp": {"H": 0, "A": 2, "B": 0, "C": 32, "D": 0, "S": 32}}]},"パーモット": {"rank": 34, "code": "0923-00", "weight": 41.0, "abilities": [], "moves": ["さいきのいのり", "でんこうそうげき", "インファイト", "れいとうパンチ", "マッハパンチ", "ほっぺすりすり", "アンコール", "ねこだまし", "ほのおのパンチ", "かみなりパンチ"], "natures": [{"name": "ようき", "up": "S", "down": "C"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "ゆうかん", "up": "A", "down": "S"}], "spreads": [{"label": "AS + h", "pct": "69.4", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "AS + b", "pct": "13.1", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}, {"label": "AS + d", "pct": "4.1", "sp": {"H": 0, "A": 32, "B": 0, "C": 0, "D": 2, "S": 32}}, {"label": "DS", "pct": "3.2", "sp": {"H": 0, "A": 0, "B": 0, "C": 0, "D": 32, "S": 32}}, {"label": "AS", "pct": "2.1", "sp": {"H": 0, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}]},"ギルガルド": {"rank": 35, "code": "0681-00", "weight": 53.0, "abilities": [], "moves": ["かげうち", "ポルターガイスト", "キングシールド", "つるぎのまい", "インファイト", "せいなるつるぎ", "アイアンヘッド", "シャドーボール", "ラスターカノン", "てっていこうせん"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "やんちゃ", "up": "A", "down": "D"}], "spreads": [{"label": "AS + h", "pct": "19.2", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "HA + bd", "pct": "9.7", "sp": {"H": 32, "A": 32, "B": 1, "C": 0, "D": 1, "S": 0}}, {"label": "HA + b", "pct": "5.6", "sp": {"H": 32, "A": 32, "B": 2, "C": 0, "D": 0, "S": 0}}, {"label": "HA + d", "pct": "4.9", "sp": {"H": 32, "A": 32, "B": 0, "C": 0, "D": 2, "S": 0}}, {"label": "HA + s", "pct": "4.6", "sp": {"H": 32, "A": 20, "B": 0, "C": 0, "D": 0, "S": 14}}]},"アローラキュウコン": {"rank": 36, "code": "0038-01", "weight": 19.9, "abilities": [], "moves": ["オーロラベール", "フリーズドライ", "アンコール", "ふぶき", "ムーンフォース", "ミストフィールド", "いたみわけ", "わるだくみ", "イカサマ", "あくのはどう"], "natures": [{"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "わんぱく", "up": "B", "down": "C"}], "spreads": [{"label": "CS + h", "pct": "22.0", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + hb", "pct": "4.1", "sp": {"H": 1, "A": 0, "B": 1, "C": 32, "D": 0, "S": 32}}, {"label": "HS + b", "pct": "3.4", "sp": {"H": 32, "A": 0, "B": 2, "C": 0, "D": 0, "S": 32}}, {"label": "HS + b", "pct": "3.4", "sp": {"H": 31, "A": 0, "B": 3, "C": 0, "D": 0, "S": 32}}, {"label": "CS + b", "pct": "3.3", "sp": {"H": 0, "A": 0, "B": 2, "C": 32, "D": 0, "S": 32}}]},"メガフラエッテ": {"rank": 37, "code": "0670-05", "weight": 100.8, "abilities": [], "moves": ["ムーンフォース", "めいそう", "こうごうせい", "ドレインキッス", "はめつのひかり", "みがわり", "サイコキネシス", "あまえる", "くさわけ", "トリック"], "natures": [{"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "うっかりや", "up": "C", "down": "D"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "おっとり", "up": "C", "down": "B"}], "spreads": [{"label": "HS + bc", "pct": "15.7", "sp": {"H": 22, "A": 0, "B": 11, "C": 1, "D": 0, "S": 32}}, {"label": "CS + h", "pct": "9.7", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "HS + bc", "pct": "7.8", "sp": {"H": 26, "A": 0, "B": 7, "C": 1, "D": 0, "S": 32}}, {"label": "HS + c", "pct": "4.6", "sp": {"H": 22, "A": 0, "B": 0, "C": 15, "D": 0, "S": 29}}, {"label": "HS + bc", "pct": "3.7", "sp": {"H": 22, "A": 0, "B": 2, "C": 10, "D": 0, "S": 32}}]},"メガピクシー": {"rank": 39, "code": "0036-00", "weight": 42.3, "abilities": [], "moves": ["ムーンフォース", "つきのひかり", "かえんほうしゃ", "コスモパワー", "めいそう", "ステルスロック", "アシストパワー", "アンコール", "でんじは", "バトンタッチ"], "natures": [{"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "すなお", "up": null, "down": null}, {"name": "しんちょう", "up": "D", "down": "C"}], "spreads": [{"label": "HB + d", "pct": "16.3", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "HB + d", "pct": "4.0", "sp": {"H": 31, "A": 0, "B": 32, "C": 0, "D": 3, "S": 0}}, {"label": "HCS", "pct": "4.0", "sp": {"H": 26, "A": 0, "B": 0, "C": 17, "D": 0, "S": 23}}, {"label": "HS + bd", "pct": "3.4", "sp": {"H": 31, "A": 0, "B": 1, "C": 0, "D": 11, "S": 23}}, {"label": "HCS", "pct": "3.2", "sp": {"H": 25, "A": 0, "B": 0, "C": 17, "D": 0, "S": 24}}]},"ガラルヤドキング": {"rank": 41, "code": "0199-01", "weight": 79.5, "abilities": [], "moves": ["かえんほうしゃ", "ヘドロばくだん", "れいとうビーム", "さむいギャグ", "サイコノイズ", "トリックルーム", "なまける", "どくどく", "サイコキネシス", "ヘドロウェーブ"], "natures": [{"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "おとなしい", "up": "D", "down": "B"}], "spreads": [{"label": "HC + d", "pct": "16.4", "sp": {"H": 31, "A": 0, "B": 0, "C": 32, "D": 3, "S": 0}}, {"label": "HD + b", "pct": "8.2", "sp": {"H": 32, "A": 0, "B": 2, "C": 0, "D": 32, "S": 0}}, {"label": "HD + c", "pct": "8.1", "sp": {"H": 32, "A": 0, "B": 0, "C": 14, "D": 20, "S": 0}}, {"label": "HC + bd", "pct": "7.5", "sp": {"H": 32, "A": 0, "B": 3, "C": 18, "D": 13, "S": 0}}, {"label": "HC + d", "pct": "4.8", "sp": {"H": 31, "A": 0, "B": 0, "C": 21, "D": 14, "S": 0}}]},"ヒスイダイケンキ": {"rank": 42, "code": "0503-01", "weight": 58.2, "abilities": [], "moves": ["ひけん・ちえなみ", "ふいうち", "せいなるつるぎ", "アンコール", "アクアカッター", "シェルブレード", "クイックターン", "つるぎのまい", "れいとうビーム", "アクアジェット"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "せっかち", "up": "S", "down": "B"}], "spreads": [{"label": "AS + h", "pct": "30.0", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "HA + bds", "pct": "6.6", "sp": {"H": 18, "A": 32, "B": 2, "C": 0, "D": 6, "S": 8}}, {"label": "HA + ds", "pct": "5.1", "sp": {"H": 20, "A": 32, "B": 0, "C": 0, "D": 2, "S": 12}}, {"label": "HA + bds", "pct": "4.1", "sp": {"H": 16, "A": 32, "B": 2, "C": 0, "D": 6, "S": 10}}, {"label": "AS + b", "pct": "3.5", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}]},"メガムクホーク": {"rank": 43, "code": "0398-00", "weight": 50.0, "abilities": [], "moves": ["インファイト", "ブレイブバード", "はねやすめ", "ブレイズキック", "いのちがけ", "とんぼがえり", "みがわり", "ふきとばし", "でんこうせっか", "ダブルウイング"], "natures": [{"name": "ようき", "up": "S", "down": "C"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ゆうかん", "up": "A", "down": "S"}], "spreads": [{"label": "AS + h", "pct": "28.0", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "HS + a", "pct": "10.0", "sp": {"H": 31, "A": 3, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "HS + a", "pct": "8.5", "sp": {"H": 32, "A": 2, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "AS + hb", "pct": "6.5", "sp": {"H": 1, "A": 32, "B": 1, "C": 0, "D": 0, "S": 32}}, {"label": "HS + a", "pct": "6.3", "sp": {"H": 27, "A": 7, "B": 0, "C": 0, "D": 0, "S": 32}}]},"メガカメックス": {"rank": 45, "code": "0009-00", "weight": 101.1, "abilities": [], "moves": ["からをやぶる", "はどうだん", "あくのはどう", "だいちのはどう", "れいとうビーム", "みずのはどう", "しおふき", "なみのり", "りゅうのはどう", "ミラーコート"], "natures": [{"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "せっかち", "up": "S", "down": "B"}], "spreads": [{"label": "CS + h", "pct": "13.6", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + hb", "pct": "6.1", "sp": {"H": 1, "A": 0, "B": 1, "C": 32, "D": 0, "S": 32}}, {"label": "CS + h", "pct": "5.3", "sp": {"H": 5, "A": 0, "B": 0, "C": 32, "D": 0, "S": 29}}, {"label": "CS + h", "pct": "4.7", "sp": {"H": 11, "A": 0, "B": 0, "C": 25, "D": 0, "S": 30}}, {"label": "HCS + b", "pct": "3.0", "sp": {"H": 29, "A": 0, "B": 2, "C": 17, "D": 0, "S": 18}}]},"メガスターミー": {"rank": 46, "code": "0121-00", "weight": 80.0, "abilities": [], "moves": ["アクアジェット", "アクアブレイク", "クイックターン", "アイススピナー", "サイコカッター", "しねんのずつき", "ちいさくなる", "じこさいせい", "たきのぼり", "こうそくスピン"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "やんちゃ", "up": "A", "down": "D"}], "spreads": [{"label": "AS + h", "pct": "37.3", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "AS + h", "pct": "16.6", "sp": {"H": 6, "A": 30, "B": 0, "C": 0, "D": 0, "S": 30}}, {"label": "AS + hb", "pct": "5.0", "sp": {"H": 8, "A": 25, "B": 1, "C": 0, "D": 0, "S": 32}}, {"label": "AS + hb", "pct": "4.1", "sp": {"H": 8, "A": 32, "B": 3, "C": 0, "D": 0, "S": 23}}, {"label": "AS + b", "pct": "1.4", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}]},"メガマフォクシー": {"rank": 48, "code": "0655-00", "weight": 39.0, "abilities": [], "moves": ["かえんほうしゃ", "わるだくみ", "サイコキネシス", "みがわり", "サイコショック", "マジカルシャイン", "アンコール", "マジカルフレイム", "おにび", "サイコノイズ"], "natures": [{"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "おっとり", "up": "C", "down": "B"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "おとなしい", "up": "D", "down": "B"}, {"name": "ようき", "up": "S", "down": "C"}], "spreads": [{"label": "CS + h", "pct": "20.4", "sp": {"H": 2, "A": 0, "B": 0, "C": 32, "D": 0, "S": 32}}, {"label": "CS + hb", "pct": "12.9", "sp": {"H": 1, "A": 0, "B": 1, "C": 32, "D": 0, "S": 32}}, {"label": "CS + b", "pct": "3.7", "sp": {"H": 0, "A": 0, "B": 2, "C": 32, "D": 0, "S": 32}}, {"label": "CS + d", "pct": "3.6", "sp": {"H": 0, "A": 0, "B": 0, "C": 32, "D": 2, "S": 32}}, {"label": "HB + s", "pct": "3.6", "sp": {"H": 31, "A": 0, "B": 31, "C": 0, "D": 0, "S": 4}}]},"ソウブレイズ": {"rank": 49, "code": "0937-00", "weight": 62.0, "abilities": [], "moves": ["むねんのつるぎ", "かげうち", "ポルターガイスト", "つるぎのまい", "インファイト", "ビルドアップ", "みちづれ", "おにび", "みがわり", "シャドークロー"], "natures": [{"name": "いじっぱり", "up": "A", "down": "C"}, {"name": "ようき", "up": "S", "down": "C"}, {"name": "わんぱく", "up": "B", "down": "C"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "せっかち", "up": "S", "down": "B"}, {"name": "さみしがり", "up": "A", "down": "B"}, {"name": "やんちゃ", "up": "A", "down": "D"}, {"name": "ゆうかん", "up": "A", "down": "S"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "おくびょう", "up": "S", "down": "A"}], "spreads": [{"label": "AS + h", "pct": "22.9", "sp": {"H": 2, "A": 32, "B": 0, "C": 0, "D": 0, "S": 32}}, {"label": "AS + hb", "pct": "13.1", "sp": {"H": 1, "A": 32, "B": 1, "C": 0, "D": 0, "S": 32}}, {"label": "HA + bs", "pct": "8.5", "sp": {"H": 17, "A": 22, "B": 15, "C": 0, "D": 0, "S": 12}}, {"label": "AS + hd", "pct": "6.0", "sp": {"H": 1, "A": 32, "B": 0, "C": 0, "D": 1, "S": 32}}, {"label": "AS + b", "pct": "4.6", "sp": {"H": 0, "A": 32, "B": 2, "C": 0, "D": 0, "S": 32}}]},"メガスコヴィラン": {"rank": 50, "code": "0952-00", "weight": 22.0, "abilities": [], "moves": ["まもる", "かえんほうしゃ", "やどりぎのタネ", "ギガドレイン", "みがわり", "リーフストーム", "オーバーヒート", "しっとのほのお", "ソーラービーム", "いかりのまえば"], "natures": [{"name": "おくびょう", "up": "S", "down": "A"}, {"name": "ずぶとい", "up": "B", "down": "A"}, {"name": "ひかえめ", "up": "C", "down": "A"}, {"name": "おだやか", "up": "D", "down": "A"}, {"name": "のんき", "up": "B", "down": "S"}, {"name": "れいせい", "up": "C", "down": "S"}, {"name": "なまいき", "up": "D", "down": "S"}, {"name": "しんちょう", "up": "D", "down": "C"}, {"name": "むじゃき", "up": "S", "down": "D"}, {"name": "おっとり", "up": "C", "down": "B"}], "spreads": [{"label": "BD + hs", "pct": "13.5", "sp": {"H": 5, "A": 0, "B": 32, "C": 0, "D": 18, "S": 11}}, {"label": "B + hds", "pct": "8.4", "sp": {"H": 5, "A": 0, "B": 32, "C": 0, "D": 14, "S": 15}}, {"label": "HB + d", "pct": "6.7", "sp": {"H": 32, "A": 0, "B": 32, "C": 0, "D": 2, "S": 0}}, {"label": "HC + bs", "pct": "5.5", "sp": {"H": 31, "A": 0, "B": 4, "C": 20, "D": 0, "S": 11}}, {"label": "CS + hd", "pct": "3.0", "sp": {"H": 1, "A": 0, "B": 0, "C": 32, "D": 1, "S": 32}}]}};
+var WEIGHTS={"ガブリアス": 95.0, "アシレーヌ": 44.0, "カバルドン": 300.0, "ブリジュラス": 60.0, "メガルカリオZ": 54.0, "ミミッキュ": 0.7, "メガグソクムシャ": 108.0, "メガリザードンY": 90.5, "イダイトウ♂": 110.0, "メガボーマンダ": 102.6, "サーフゴー": 30.0, "マスカーニャ": 31.2, "アーマーガア": 75.0, "メガカイリュー": 210.0, "カイリュー": 210.0, "ゴリランダー": 90.0, "メガメタグロス": 550.0, "イエッサン♂": 28.0, "セグレイブ": 210.0, "キラフロル": 45.0, "メガギャラドス": 235.0, "エースバーン": 33.0, "ブラッキー": 27.0, "メガゲンガー": 40.5, "ヒートロトム": 0.3, "ウォッシュロトム": 0.3, "ドドゲザン": 120.0, "ウルガモス": 46.0, "ドリュウズ": 40.4, "バンギラス": 202.0, "ドヒドイデ": 14.5, "ゲッコウガ": 40.0, "サザンドラ": 160.0, "ハッサム": 118.0, "ラウドボーン": 326.5, "ニンフィア": 23.5, "メガバシャーモ": 52.0, "メガラグラージ": 81.9, "オオニューラ": 43.0,"メガライチュウY": 26.0,"パーモット": 41.0,"ギルガルド": 53.0,"アローラキュウコン": 19.9,"メガフラエッテ": 100.8,"メガピクシー": 42.3,"ガラルヤドキング": 79.5,"ヒスイダイケンキ": 58.2,"メガムクホーク": 50.0,"メガカメックス": 101.1,"メガスターミー": 80.0,"メガマフォクシー": 39.0,"ソウブレイズ": 62.0,"メガスコヴィラン": 22.0};
+var MOVES_DB={
+"じしん":{t:"じめん",c:"物理",p:100},
+"げきりん":{t:"ドラゴン",c:"物理",p:120},
+"がんせきふうじ":{t:"いわ",c:"物理",p:60},
+"スケイルショット":{t:"ドラゴン",c:"物理",p:75,o:{note:'スケイルショットは25×最大5回。ここでは3回命中（威力75）で計算'}},
+"かえんほうしゃ":{t:"ほのお",c:"特殊",p:90},
+"ドラゴンテール":{t:"ドラゴン",c:"物理",p:60,o:{contact:true}},
+"りゅうせいぐん":{t:"ドラゴン",c:"特殊",p:130},
+"だいちのちから":{t:"じめん",c:"特殊",p:90},
+"ムーンフォース":{t:"フェアリー",c:"特殊",p:95},
+"うたかたのアリア":{t:"みず",c:"特殊",p:90},
+"アクアジェット":{t:"みず",c:"物理",p:40,o:{contact:true}},
+"クイックターン":{t:"みず",c:"物理",p:60,o:{contact:true}},
+"サイコノイズ":{t:"エスパー",c:"特殊",p:75},
+"こおりのキバ":{t:"こおり",c:"物理",p:65,o:{contact:true}},
+"ストーンエッジ":{t:"いわ",c:"物理",p:100},
+"ラスターカノン":{t:"はがね",c:"特殊",p:80},
+"10まんボルト":{t:"でんき",c:"特殊",p:90},
+"あくのはどう":{t:"あく",c:"特殊",p:80,o:{pulse:true}},
+"りゅうのはどう":{t:"ドラゴン",c:"特殊",p:85,o:{pulse:true}},
+"エレクトロビーム":{t:"でんき",c:"特殊",p:130,o:{note:'エレクトロビームは本来ため技（ここでは命中したものとして計算）'}},
+"てっていこうせん":{t:"はがね",c:"特殊",p:140},
+"じゃれつく":{t:"フェアリー",c:"物理",p:90,o:{contact:true}},
+"かげうち":{t:"ゴースト",c:"物理",p:40},
+"シャドークロー":{t:"ゴースト",c:"物理",p:70,o:{contact:true}},
+"ウッドハンマー":{t:"くさ",c:"物理",p:120,o:{contact:true}},
+"ドレインパンチ":{t:"かくとう",c:"物理",p:75,o:{contact:true}},
+"はどうだん":{t:"かくとう",c:"特殊",p:80,o:{pulse:true}},
+"しんくうは":{t:"かくとう",c:"特殊",p:40},
+"インファイト":{t:"かくとう",c:"物理",p:120,o:{contact:true}},
+"コメットパンチ":{t:"はがね",c:"物理",p:90,o:{contact:true}},
+"バレットパンチ":{t:"はがね",c:"物理",p:40,o:{contact:true}},
+"ふいうち":{t:"あく",c:"物理",p:70,o:{contact:true}},
+"きゅうけつ":{t:"むし",c:"物理",p:80,o:{contact:true}},
+"アイアンヘッド":{t:"はがね",c:"物理",p:80,o:{contact:true}},
+"であいがしら":{t:"むし",c:"物理",p:70,o:{contact:true,note:'であいがしらは出したターンにしか成功しない'}},
+"ドリルライナー":{t:"じめん",c:"物理",p:80,o:{contact:true}},
+"しっぺがえし":{t:"あく",c:"物理",p:50,o:{note:'しっぺがえしは後攻で威力2倍（ここでは通常の50で計算）'}},
+"ソーラービーム":{t:"くさ",c:"特殊",p:120,o:{note:'ソーラービームは本来ため技（晴れ下では即発動）'}},
+"フレアドライブ":{t:"ほのお",c:"物理",p:120,o:{contact:true}},
+"エアスラッシュ":{t:"ひこう",c:"特殊",p:75},
+"ウェザーボール":{t:"ノーマル",c:"特殊",p:50,o:{note:'ウェザーボールは天候でタイプ・威力が変化（ここでは天候なしの通常技として計算）'}},
+"かみなりパンチ":{t:"でんき",c:"物理",p:75,o:{contact:true}},
+"ドラゴンクロー":{t:"ドラゴン",c:"物理",p:80,o:{contact:true}},
+"おはかまいり":{t:"ゴースト",c:"物理",p:50,o:{note:'おはかまいりは倒れた味方の数で威力上昇（ここでは基本の50で計算）'}},
+"ウェーブタックル":{t:"みず",c:"物理",p:120,o:{contact:true}},
+"サイコファング":{t:"エスパー",c:"物理",p:85,o:{contact:true}},
+"もろはのずつき":{t:"いわ",c:"物理",p:150},
+"アクアブレイク":{t:"みず",c:"物理",p:85,o:{contact:true}},
+"すてみタックル":{t:"ノーマル",c:"物理",p:120,o:{contact:true}},
+"だいもんじ":{t:"ほのお",c:"特殊",p:110},
+"あばれる":{t:"ノーマル",c:"物理",p:120,o:{contact:true}},
+"ハイパーボイス":{t:"ノーマル",c:"特殊",p:90},
+"シャドーボール":{t:"ゴースト",c:"特殊",p:80},
+"ゴールドラッシュ":{t:"はがね",c:"特殊",p:120},
+"パワージェム":{t:"いわ",c:"特殊",p:80},
+"きあいだま":{t:"かくとう",c:"特殊",p:120},
+"トリプルアクセル":{t:"こおり",c:"物理",p:60,o:{note:'トリプルアクセルは20×最大3回。ここでは全弾命中（合計60相当）で計算'}},
+"トリックフラワー":{t:"くさ",c:"物理",p:70,o:{alwaysCrit:true}},
+"はたきおとす":{t:"あく",c:"物理",p:65,o:{contact:true,knockOff:true}},
+"とんぼがえり":{t:"むし",c:"物理",p:70,o:{contact:true}},
+"イカサマ":{t:"あく",c:"物理",p:95,o:{foulPlay:true}},
+"リーフストーム":{t:"くさ",c:"特殊",p:130},
+"ボディプレス":{t:"かくとう",c:"物理",p:80,o:{contact:true,bodyPress:true}},
+"ブレイブバード":{t:"ひこう",c:"物理",p:120,o:{contact:true}},
+"しんそく":{t:"ノーマル",c:"物理",p:80},
+"アイススピナー":{t:"こおり",c:"物理",p:80},
+"グラススライダー":{t:"くさ",c:"物理",p:55,o:{contact:true}},
+"ドラムアタック":{t:"くさ",c:"物理",p:80,o:{contact:true}},
+"10まんばりき":{t:"かくとう",c:"物理",p:95,o:{contact:true}},
+"ばかぢから":{t:"かくとう",c:"物理",p:120,o:{contact:true}},
+"こおりのつぶて":{t:"こおり",c:"物理",p:40},
+"きょけんとつげき":{t:"ドラゴン",c:"物理",p:120,o:{contact:true}},
+"つららおとし":{t:"こおり",c:"物理",p:85},
+"かみなりのキバ":{t:"でんき",c:"物理",p:65,o:{contact:true}},
+"つららばり":{t:"こおり",c:"物理",p:75,o:{note:'つららばりは25×2〜5回。ここでは3回命中（威力75）で計算'}},
+"ワイドフォース":{t:"エスパー",c:"特殊",p:80},
+"マジカルフレイム":{t:"ほのお",c:"特殊",p:75},
+"マジカルシャイン":{t:"フェアリー",c:"特殊",p:80},
+"エナジーボール":{t:"くさ",c:"特殊",p:90},
+"たきのぼり":{t:"みず",c:"物理",p:80,o:{contact:true}},
+"パワーウィップ":{t:"くさ",c:"物理",p:120},
+"ゆきなだれ":{t:"こおり",c:"物理",p:60,o:{note:'ゆきなだれは攻撃を受けたターンに後攻で威力2倍（ここでは通常の60で計算）'}},
+"やけっぱち":{t:"ほのお",c:"物理",p:75,o:{contact:true}},
+"かみくだく":{t:"あく",c:"物理",p:80,o:{contact:true}},
+"アクアテール":{t:"みず",c:"物理",p:90,o:{contact:true}},
+"ヘドロウェーブ":{t:"どく",c:"特殊",p:95},
+"ヘドロばくだん":{t:"どく",c:"特殊",p:90},
+"キラースピン":{t:"どく",c:"物理",p:30,o:{contact:true}},
+"マッドショット":{t:"じめん",c:"特殊",p:55},
+"かえんボール":{t:"ほのお",c:"物理",p:120},
+"とびひざげり":{t:"かくとう",c:"物理",p:130},
+"ダストシュート":{t:"どく",c:"物理",p:120,o:{contact:true}},
+"うちおとす":{t:"いわ",c:"物理",p:50},
+"ハイドロポンプ":{t:"みず",c:"特殊",p:110},
+"ボルトチェンジ":{t:"でんき",c:"特殊",p:70},
+"ほうでん":{t:"でんき",c:"特殊",p:80},
+"れいとうビーム":{t:"こおり",c:"特殊",p:90},
+"みずしゅりけん":{t:"みず",c:"物理",p:45,o:{note:'みずしゅりけんは15×2〜5回。ここでは3回命中（威力45）で計算'}},
+"なみのり":{t:"みず",c:"特殊",p:90},
+"くさむすび":{t:"くさ",c:"特殊",p:60,o:{weightTier:true}},
+"こごえるかぜ":{t:"こおり",c:"特殊",p:60},
+"たたりめ":{t:"ゴースト",c:"特殊",p:65},
+"オーバーヒート":{t:"ほのお",c:"特殊",p:130},
+"いわなだれ":{t:"いわ",c:"物理",p:75},
+"かわらわり":{t:"かくとう",c:"物理",p:75,o:{contact:true}},
+"けたぐり":{t:"かくとう",c:"物理",p:60,o:{contact:true,weightTier:true}},
+"かえんのまい":{t:"ほのお",c:"特殊",p:80},
+"ギガドレイン":{t:"くさ",c:"特殊",p:75},
+"むしのさざめき":{t:"むし",c:"特殊",p:90},
+"サイコキネシス":{t:"エスパー",c:"特殊",p:90},
+"ひやみず":{t:"みず",c:"特殊",p:50},
+"どくづき":{t:"どく",c:"物理",p:80,o:{contact:true}},
+"まとわりつく":{t:"むし",c:"特殊",p:70},
+"フレアソング":{t:"ほのお",c:"特殊",p:80},
+"みわくのボイス":{t:"フェアリー",c:"特殊",p:80},
+"もえつきる":{t:"ほのお",c:"特殊",p:150},
+"こうそくスピン":{t:"ノーマル",c:"物理",p:50,o:{contact:true}},
+"でんこうせっか":{t:"ノーマル",c:"物理",p:40,o:{contact:true}},
+"はかいこうせん":{t:"ノーマル",c:"特殊",p:150},
+"フェイタルクロー":{t:"どく",c:"物理",p:80,o:{contact:true}},
+"ねこだまし":{t:"ノーマル",c:"物理",p:40,o:{contact:true}},
+"じごくづき":{t:"あく",c:"物理",p:80,o:{contact:true}},
+"アクロバット":{t:"ひこう",c:"物理",p:110,o:{contact:true,note:'アクロバットは持ち物なしのため威力110で計算'}},
+"ほのおのパンチ":{t:"ほのお",c:"物理",p:75,o:{contact:true}},
+"アームハンマー":{t:"かくとう",c:"物理",p:100,o:{contact:true}},
+"れいとうパンチ":{t:"こおり",c:"物理",p:75,o:{contact:true,punch:true}},
+"むしくい":{t:"むし",c:"物理",p:60,o:{contact:true}},
+"ダブルウイング":{t:"ひこう",c:"物理",p:80,o:{contact:true,note:'ダブルウイングは40×2回。ここでは合計80で計算'}},
+"しねんのずつき":{t:"エスパー",c:"物理",p:80,o:{contact:true}},
+"ドゲザン":{t:"あく",c:"物理",p:85,o:{contact:true}},
+"ゴーストダイブ":{t:"ゴースト",c:"物理",p:90,o:{note:'ゴーストダイブは本来2ターン技（ここでは命中したものとして計算）'}},
+"ぼうふう":{t:"ひこう",c:"特殊",p:110},
+"がんせきほうじ":{t:"いわ",c:"物理",p:75,o:{note:'がんせきほうじは25×2〜5回。ここでは3回命中（威力75）で計算'}},
+"つばめがえし":{t:"ひこう",c:"物理",p:60,o:{contact:true}},
+"じならし":{t:"じめん",c:"物理",p:60},
+"かみなり":{t:"でんき",c:"特殊",p:110},
+"ふぶき":{t:"こおり",c:"特殊",p:110},
+"ワイルドボルト":{t:"でんき",c:"物理",p:90,o:{contact:true}},
+"スパーク":{t:"でんき",c:"物理",p:65,o:{contact:true}},
+"エレキネット":{t:"でんき",c:"特殊",p:55},
+"チャージビーム":{t:"でんき",c:"特殊",p:50},
+"パラボラチャージ":{t:"でんき",c:"特殊",p:65},
+"みらいよち":{t:"エスパー",c:"特殊",p:120},
+"サイコカッター":{t:"エスパー",c:"物理",p:70,o:{contact:true}},
+"サイケこうせん":{t:"エスパー",c:"特殊",p:65},
+"オーラウィング":{t:"エスパー",c:"特殊",p:80},
+"ハイドロカノン":{t:"みず",c:"特殊",p:150},
+"ブラストバーン":{t:"ほのお",c:"特殊",p:150},
+"ハードプラント":{t:"くさ",c:"特殊",p:150},
+"ねっぷう":{t:"ほのお",c:"特殊",p:95},
+"ソーラーブレード":{t:"くさ",c:"物理",p:125,o:{contact:true}},
+"リーフブレード":{t:"くさ",c:"物理",p:90,o:{contact:true}},
+"タネマシンガン":{t:"くさ",c:"物理",p:75,o:{note:'タネマシンガンは25×2〜5回。ここでは3回命中（威力75）で計算'}},
+"マジカルリーフ":{t:"くさ",c:"特殊",p:60},
+"はなびらのまい":{t:"くさ",c:"特殊",p:120},
+"フリーズドライ":{t:"こおり",c:"特殊",p:70,o:{note:'フリーズドライはみずタイプにも効果抜群（ここでは通常のタイプ相性で計算）'}},
+"ブリザードランス":{t:"こおり",c:"物理",p:130},
+"アイスハンマー":{t:"こおり",c:"物理",p:100,o:{contact:true}},
+"オーロラビーム":{t:"こおり",c:"特殊",p:65},
+"はっけい":{t:"かくとう",c:"物理",p:60,o:{contact:true}},
+"マッハパンチ":{t:"かくとう",c:"物理",p:40,o:{contact:true,punch:true}},
+"とびげり":{t:"かくとう",c:"物理",p:100},
+"ローキック":{t:"かくとう",c:"物理",p:65,o:{contact:true}},
+"あなをほる":{t:"じめん",c:"物理",p:80,o:{contact:true}},
+"ねっさのだいち":{t:"じめん",c:"特殊",p:70},
+"ボーンラッシュ":{t:"じめん",c:"物理",p:75,o:{note:'ボーンラッシュは25×2〜5回。ここでは3回命中（威力75）で計算'}},
+"ドリルくちばし":{t:"ひこう",c:"物理",p:80,o:{contact:true}},
+"そらをとぶ":{t:"ひこう",c:"物理",p:90,o:{contact:true,note:'そらをとぶは本来2ターン技（ここでは命中したものとして計算）'}},
+"エアカッター":{t:"ひこう",c:"特殊",p:60},
+"つばさでうつ":{t:"ひこう",c:"物理",p:60,o:{contact:true}},
+"エアロブラスト":{t:"ひこう",c:"特殊",p:100},
+"ゴッドバード":{t:"ひこう",c:"物理",p:140,o:{note:'ゴッドバードは本来ため技（ここでは命中したものとして計算）'}},
+"シザークロス":{t:"むし",c:"物理",p:80,o:{contact:true}},
+"メガホーン":{t:"むし",c:"物理",p:120},
+"シグナルビーム":{t:"むし",c:"特殊",p:75},
+"クロスポイズン":{t:"どく",c:"物理",p:70,o:{contact:true}},
+"アシッドボム":{t:"どく",c:"特殊",p:40},
+"ようかいえき":{t:"どく",c:"特殊",p:40},
+"クリアスモッグ":{t:"どく",c:"特殊",p:50},
+"げんしのちから":{t:"いわ",c:"特殊",p:60},
+"ダイヤストーム":{t:"いわ",c:"物理",p:100},
+"ポルターガイスト":{t:"ゴースト",c:"物理",p:110,o:{contact:true}},
+"シャドーパンチ":{t:"ゴースト",c:"物理",p:60,o:{contact:true}},
+"アストラルバレッジ":{t:"ゴースト",c:"特殊",p:120},
+"ドラゴンダイブ":{t:"ドラゴン",c:"物理",p:100,o:{contact:true}},
+"ワイドブレイカー":{t:"ドラゴン",c:"物理",p:60,o:{contact:true}},
+"ドラゴンアロー":{t:"ドラゴン",c:"物理",p:100,o:{note:'ドラゴンアローは50×2回。ここでは合計100で計算'}},
+"バークアウト":{t:"あく",c:"特殊",p:55},
+"つじぎり":{t:"あく",c:"物理",p:70,o:{contact:true}},
+"かみつく":{t:"あく",c:"物理",p:60,o:{contact:true}},
+"ダメおし":{t:"あく",c:"物理",p:60,o:{contact:true,note:'ダメおしはダメージを受けた相手に威力2倍（ここでは通常の60で計算）'}},
+"ぶんまわす":{t:"あく",c:"物理",p:60,o:{contact:true}},
+"メタルクロー":{t:"はがね",c:"物理",p:50,o:{contact:true}},
+"スマートホーン":{t:"はがね",c:"物理",p:70,o:{contact:true}},
+"アイアンテール":{t:"はがね",c:"物理",p:100,o:{contact:true}},
+"ドレインキッス":{t:"フェアリー",c:"特殊",p:50},
+"ようせいのかぜ":{t:"フェアリー",c:"特殊",p:40},
+"フルールカノン":{t:"フェアリー",c:"特殊",p:130},
+"スピリットブレイク":{t:"フェアリー",c:"物理",p:75,o:{contact:true}},
+"ミストバースト":{t:"フェアリー",c:"特殊",p:100},
+"のしかかり":{t:"ノーマル",c:"物理",p:85,o:{contact:true}},
+"とっしん":{t:"ノーマル",c:"物理",p:90,o:{contact:true}},
+"ギガインパクト":{t:"ノーマル",c:"物理",p:150,o:{contact:true}},
+"スピードスター":{t:"ノーマル",c:"特殊",p:60},
+"フェイント":{t:"ノーマル",c:"物理",p:30,o:{contact:true}},
+"メガトンパンチ":{t:"ノーマル",c:"物理",p:80,o:{contact:true}},
+"メガトンキック":{t:"ノーマル",c:"物理",p:120,o:{contact:true}},
+"ロケットずつき":{t:"ノーマル",c:"物理",p:130,o:{note:'ロケットずつきは本来ため技（ここでは命中したものとして計算）'}},
+"ブラッドムーン":{t:"ノーマル",c:"特殊",p:140},
+"ハイパードリル":{t:"ノーマル",c:"物理",p:100,o:{contact:true}},
+"アクアカッター":{t:"みず",c:"物理",p:70,o:{slicing:true}},
+"ジェットパンチ":{t:"みず",c:"物理",p:60,o:{contact:true}},
+"アクアステップ":{t:"みず",c:"物理",p:80,o:{contact:true}},
+"みずのはどう":{t:"みず",c:"特殊",p:60,o:{pulse:true}},
+"でんじほう":{t:"でんき",c:"特殊",p:120,o:{note:'でんじほうは命中率50%（ここでは命中したものとして計算）'}},
+"だいちのはどう":{t:"ノーマル",c:"特殊",p:50,o:{pulse:true,terrainPulse:true,note:'だいちのはどうはフィールド下で威力2倍・タイプがフィールド対応タイプに変化'}},
+"ひけん・ちえなみ":{t:"あく",c:"物理",p:65,o:{slicing:true}},
+"せいなるつるぎ":{t:"かくとう",c:"物理",p:90,o:{slicing:true}},
+"シェルブレード":{t:"みず",c:"物理",p:75,o:{slicing:true,contact:true}},
+"でんこうそうげき":{t:"でんき",c:"物理",p:120,o:{contact:true,note:'でんこうそうげきは使用後に自分のタイプからでんきが消える（ここでは1発目として計算）'}},
+"ほっぺすりすり":{t:"でんき",c:"物理",p:20,o:{contact:true}},
+"むねんのつるぎ":{t:"ほのお",c:"物理",p:90,o:{contact:true}},
+"しっとのほのお":{t:"ほのお",c:"特殊",p:70},
+"はめつのひかり":{t:"フェアリー",c:"特殊",p:140,o:{note:'はめつのひかりは反動ダメージがある（ここでは攻撃のみ計算）'}},
+"アシストパワー":{t:"エスパー",c:"特殊",p:20,o:{note:'アシストパワーは自分の能力ランク上昇で威力上昇（ここでは基本の20で計算）'}},
+"サイコショック":{t:"エスパー",c:"特殊",p:80,o:{psyshock:true,note:'サイコショックは相手のぼうぎょで計算'}},
+"ブレイズキック":{t:"ほのお",c:"物理",p:85,o:{contact:true}},
+"くさわけ":{t:"くさ",c:"物理",p:50,o:{contact:true}}
+};
+var STATUS_MOVES=["ステルスロック", "つるぎのまい", "りゅうのまい", "ちょうのまい", "わるだくみ", "めいそう", "てっぺき", "ビルドアップ", "あくび", "なまける", "はねやすめ", "じこさいせい", "あさのひざし", "つきのひかり", "ねがいごと", "いやしのねがい", "まもる", "みがわり", "みきり", "トーチカ", "ニードルガード", "アンコール", "ちょうはつ", "ほえる", "ふきとばし", "のろい", "どくどく", "どくびし", "おにび", "くろいきり", "きりばらい", "トリック", "トリックルーム", "コートチェンジ", "バトンタッチ", "ほろびのうた", "みちづれ", "やどりぎのタネ", "ねむる", "こうそくいどう", "いたみわけ", "ハサミギロチン", "メタルバースト", "ミラーコート", "つのドリル"];
+
+/* ================= チャンピオンズ実数値 ================= */
+function statHP(base, sp){ return base + 75 + sp;}
+function statOther(base, sp, mult){ return Math.floor((base + 20 + sp) * mult);}
+var NATURE_UD = {"さみしがり":{up:"A",down:"B"},"いじっぱり":{up:"A",down:"C"},"やんちゃ":{up:"A",down:"D"},"ゆうかん":{up:"A",down:"S"},
+"ずぶとい":{up:"B",down:"A"},"わんぱく":{up:"B",down:"C"},"のんき":{up:"B",down:"S"},"のうてんき":{up:"B",down:"D"},
+"ひかえめ":{up:"C",down:"A"},"おっとり":{up:"C",down:"B"},"うっかりや":{up:"C",down:"D"},"れいせい":{up:"C",down:"S"},
+"おだやか":{up:"D",down:"A"},"おとなしい":{up:"D",down:"B"},"しんちょう":{up:"D",down:"C"},"なまいき":{up:"D",down:"S"},
+"おくびょう":{up:"S",down:"A"},"せっかち":{up:"S",down:"B"},"ようき":{up:"S",down:"C"},"むじゃき":{up:"S",down:"D"}};
+function natureMultFor(atk, key){
+if (atk._custom){ if (atk._custom.up===key) return 1.1; if (atk._custom.down===key) return 0.9; return 1.0;}
+var nu = NATURE_UD[atk.nature];
+if (nu){ if (nu.up===key) return 1.1; if (nu.down===key) return 0.9;}
+return 1.0;
+}
+function attackerStat(atk){
+var p = pokeByName(atk.poke);
+var idx = atk.atkKey==="A"? 1: (atk.atkKey==="C"? 3: 2);
+var sp = atk._custom? (atk._custom.sp[atk.atkKey]||0): atk.spAtk;
+return statOther(p.base[idx], sp, natureMultFor(atk, atk.atkKey));
+}
+
+/* ================= ダメージ計算 ================= */
+function rankMult(r){ /* 能力ランク補正：+側は(2+r)/2、-側は2/(2-r) */ return r>=0? (2+r)/2: 2/(2-r);}
+function pokeRound(x){ /* 四捨五入に近いポケモン式丸め（0.5は切り捨て寄り） */
+return Math.floor(x + 0.49999);
+}
+function apply4096(dmg, num){ return Math.max(0, Math.floor((dmg * num + 2048 - 1) / 4096));}
+function mod4096(dmg, mult){ return pokeRound(dmg * mult);}
+
+function calcDamage(atk, move, def, defStats, opts){
+var atkPoke = pokeByName(atk.poke);
+var notes = [];
+var moveType = move.type, power = move.power;
+
+/* スカイスキン：ノーマル→ひこう・威力1.2倍 */
+if (atk.aerilate && move.type==="ノーマル"){ moveType = "ひこう"; power = Math.floor(power * 1.2); notes.push("スカイスキンでひこう技化・威力1.2倍");}
+/* フェアリースキン：ノーマル→フェアリー・威力1.2倍 */
+if (atk.pixilate && move.type==="ノーマル"){ moveType = "フェアリー"; power = Math.floor(power * 1.2); notes.push("フェアリースキンでフェアリー技化・威力1.2倍");}
+/* テクニシャン：威力60以下×1.5 */
+if (atk.technician && power <= 60){ power = Math.floor(power * 1.5); notes.push("テクニシャンで威力1.5倍");}
+/* メガランチャー：波動技×1.5 */
+if (atk.megaLauncher && move.pulse){ power = Math.floor(power * 1.5); notes.push("メガランチャーで波動技の威力1.5倍");}
+/* きれあじ：切断技×1.5 */
+if (atk.sharpness && move.slicing){ power = Math.floor(power * 1.5); notes.push("きれあじで切断技の威力1.5倍");}
+/* てつのこぶし：パンチ技×1.2 */
+if (atk.ironFist && move.punch){ power = Math.floor(power * 1.2); notes.push("てつのこぶしでパンチ技の威力1.2倍");}
+if (move.name==="アクロバット" && atk.itemKind && atk.itemKind!=="none" && power===110){ power = 55; notes.push("アクロバット：持ち物ありのため威力55で計算");}
+/* ワイドフォース：サイコフィールド下で威力1.5倍（80→120） */
+var effTerrain = opts.terrain;
+if (opts.autoField && atk.autoTerrain) effTerrain = atk.autoTerrain;
+if (move.name==="ワイドフォース" && effTerrain==="psychic"){ power = Math.floor(power * 1.5); notes.push("サイコフィールドでワイドフォースの威力1.5倍");}
+/* だいちのはどう：フィールド下で威力2倍・タイプ変化 */
+if (move.terrainPulse && effTerrain!=="none"){
+var tpTypes = {grassy:"くさ", electric:"でんき", psychic:"エスパー", misty:"フェアリー"};
+if (tpTypes[effTerrain]){ power = power * 2; moveType = tpTypes[effTerrain]; notes.push("フィールドでだいちのはどうの威力2倍・"+moveType+"タイプ化");}
+}
+
+var eff = effOf(moveType, def.types);
+/* ふゆう */
+if (def.ability==="ふゆう" && moveType==="じめん") eff = 0;
+
+var A = attackerStat(atk);
+if (move.weightTier){
+var dw = WEIGHTS[def.name] || 0;
+power = dw<=9.9? 20: dw<=24.9? 40: dw<=49.9? 60: dw<=99.9? 80: dw<=199.9? 100: 120;
+notes.push(move.name+"の威力は防御側の重さ"+dw+"kgで"+power+"として計算");
+}
+if (move.foulPlay){ A = statOther(def.base[1], 0, 1); notes.push("イカサマ：防御側のこうげきで計算");}
+var isPhys = move.cat==="物理";
+var D = (isPhys || move.psyshock)? defStats.B: defStats.D;
+if (move.bodyPress){ A = statOther(atkPoke.base[2], atk.spAtk, natureMultFor(atk, "B"));}
+/* ちからもち：こうげき2倍（物理技） */
+if (atk.hugePower && isPhys && !move.bodyPress && !move.foulPlay){ A = A * 2; notes.push("ちからもちでこうげき2倍");}
+/* ギルガルド：攻撃時はブレードフォルム（A・C種族値140）で計算 */
+if (atk.stanceBlade && !move.foulPlay && !move.bodyPress){ var bk2 = isPhys? "A": "C"; var bsp2 = atk._custom? (atk._custom.sp[bk2]||0): atk.spAtk; A = statOther(140, bsp2, natureMultFor(atk, bk2)); notes.push("ブレードフォルムの能力（種族値140）で計算");}
+/* カスタム計算：こうげき／とくこうの能力ランク補正（物理技→こうげき、特殊技→とくこう） */
+if (atk._custom && !move.foulPlay && !move.bodyPress){
+var rk = isPhys? (atk._custom.rankA||0): (atk._custom.rankC||0);
+if (rk){ var rkMult = rankMult(rk); A = Math.floor(A * rkMult); notes.push((isPhys? "こうげき": "とくこう") + "ランク" + (rk>0? "+": "") + rk + "（攻撃×" + (Math.round(rkMult*100)/100) + "）");}
+}
+/* 天候による防御側補正：雪＝こおりの防御×1.5／砂嵐＝いわの特防×1.5（実数値側で反映） */
+var preWeather = opts.weather;
+if (opts.autoField && atk.autoWeather) preWeather = atk.autoWeather;
+if (preWeather==="snow" && def.types.indexOf("こおり")>=0 && isPhys) D = Math.floor(D * 1.5);
+if (preWeather==="sand" && def.types.indexOf("いわ")>=0 && !isPhys) D = Math.floor(D * 1.5);
+
+if (eff === 0){
+return {min:0,max:0,rolls:[],eff:0,koText:"効果なし",koClass:"",koHits:Infinity,guaranteed:Infinity,randKO:0,notes:notes,A:A,D:D,power:power,moveType:moveType};
+}
+
+/* 基礎ダメージ Lv50: ⌊⌊22×威力×A÷D⌋÷50⌋+2 */
+var dmg = Math.floor(Math.floor(22 * power * A / D) / 50) + 2;
+
+/* 天候（自動反映を含む） */
+var weather = opts.weather, terrain = opts.terrain;
+if (opts.autoField){ if (atk.autoWeather) weather = atk.autoWeather; if (atk.autoTerrain) terrain = atk.autoTerrain;}
+if (weather==="sun"){ if (moveType==="ほのお") dmg = mod4096(dmg,1.5); if (moveType==="みず") dmg = mod4096(dmg,0.5);}
+if (weather==="rain"){ if (moveType==="みず") dmg = mod4096(dmg,1.5); if (moveType==="ほのお") dmg = mod4096(dmg,0.5);}
+/* 雪・砂嵐の耐久補正は基礎ダメージ計算前に防御実数値へ反映済み */
+
+/* フィールド */
+if (terrain==="grassy"){
+if (moveType==="くさ") dmg = mod4096(dmg,1.3);
+if (move.name==="じしん" || move.name==="じならし" || move.name==="マグニチュード") dmg = mod4096(dmg,0.5);
+}
+if (terrain==="electric" && moveType==="でんき") dmg = mod4096(dmg,1.3);
+if (terrain==="psychic" && moveType==="エスパー") dmg = mod4096(dmg,1.3);
+if (terrain==="misty" && moveType==="ドラゴン") dmg = mod4096(dmg,0.5);
+
+/* 急所 */
+var isCrit = opts.crit || move.alwaysCrit;
+if (isCrit) dmg = mod4096(dmg,1.5);
+
+/* タイプ一致 */
+var stab = 1;
+if (atk.protean) stab = 1.5;
+else if (atkPoke.types.indexOf(moveType)>=0) stab = atk.adaptability? 2.0: 1.5;
+if (stab!== 1) dmg = mod4096(dmg, stab);
+
+/* タイプ相性 */
+dmg = Math.floor(dmg * eff);
+
+/* 壁 */
+if (opts.wall==="reflect" && isPhys) dmg = mod4096(dmg,0.5);
+if (opts.wall==="light" &&!isPhys) dmg = mod4096(dmg,0.5);
+if (opts.wall==="veil") dmg = mod4096(dmg,0.5);
+
+/* 持ち物・特性（攻撃側） */
+if (atk.itemKind==="orb") dmg = mod4096(dmg, 5324/4096);
+if (atk.itemKind==="band" && isPhys && !move.bodyPress && !move.foulPlay) dmg = mod4096(dmg,1.5);
+if (atk.itemKind==="specs" && !isPhys) dmg = mod4096(dmg,1.5);
+if (atk.itemKind==="belt" && eff>1) dmg = mod4096(dmg,1.2);
+if (atk.itemKind==="scarf") notes.push("こだわりスカーフ：火力補正なし（素早さ1.5倍のみ）");
+if (atk.itemKind==="glasses" && moveType==="あく") dmg = mod4096(dmg,1.2);
+if (atk.itemKind==="gem-normal" && moveType==="ノーマル"){ dmg = mod4096(dmg,1.3); notes.push("ノーマルジュエルで威力1.3倍（1回のみ）");}
+if (atk.toughClaws && move.contact) dmg = mod4096(dmg,1.3);
+/* フェアリーオーラ：フェアリー技×1.33 */
+if (atk.fairyAura && moveType==="フェアリー"){ dmg = mod4096(dmg,1.33); notes.push("フェアリーオーラでフェアリー技1.33倍");}
+if (atk.overlord) { dmg = mod4096(dmg, 1 + 0.1 * atk.overlord); notes.push("そうだいしょう：倒れた味方1体で威力+10%として計算");}
+if (move.knockOff && opts.defItem!=="none"){ dmg = mod4096(dmg,1.5); notes.push("はたきおとす：持ち物ありで威力1.5倍");}
+
+/* 半減きのみ（防御側） */
+var berryType = {"berry-haban":"ドラゴン","berry-yache":"こおり","berry-shuca":"じめん"}[opts.defItem];
+if (berryType && moveType===berryType && eff>1){ dmg = mod4096(dmg,0.5); notes.push("弱点半減きのみで半減（1回のみ）");}
+
+/* マルチスケイル（HP満タン時） */
+if (def.ability==="マルチスケイル"){ dmg = mod4096(dmg,0.5); notes.push("マルチスケイル：HP満タン時半減");}
+if (def.ability==="ばけのかわ") notes.push("ばけのかわ：最初の1発はほぼ無効（下記は皮が剥がれた後のダメージ）");
+if (def.ability==="がんじょう") notes.push("がんじょう：HP満タン時は1残る");
+if (opts.defItem==="sash") notes.push("きあいのタスキ：HP満タン時は1残る");
+if (move.note && !(move.name==="アクロバット" && atk.itemKind && atk.itemKind!=="none")) notes.push(move.note);
+
+/* 乱数16通り */
+var rolls = [];
+for (var i=0;i<16;i++){
+var r = Math.floor(dmg * (85 + i) / 100);
+if (r < 1) r = 1;
+rolls.push(r);
+}
+rolls.sort(function(a,b){return a-b;});
+var min = rolls[0], max = rolls[15], HP = defStats.HP;
+
+/* 確定数判定 */
+var koText, koClass, koHits, randKO = 0;
+if (min >= HP){ koText = "確定1発"; koClass="k1"; koHits=1;}
+else if (max >= HP){
+var cnt = rolls.filter(function(x){return x>=HP;}).length;
+randKO = cnt/16; koText = "乱数1発 (" + (cnt/16*100).toFixed(1) + "%)"; koClass="kr1"; koHits=1;
+} else {
+koHits = Math.ceil(HP / min);
+var guaranteed = min * koHits >= HP;
+/* 乱数で1つ少ない発数で倒れるか */
+if (max * (koHits-1) >= HP){
+var need = koHits-1;
+/* 簡易：最高乱数前提の乱数表記 */
+koText = "乱数" + need + "発〜確定" + koHits + "発"; koClass = need<=2? "k2": "";
+} else {
+koText = "確定" + koHits + "発"; koClass = koHits<=2? "k2": "";
+}
+if (koHits>4){ koText = "確定" + koHits + "発"; koClass="";}
+}
+return {min:min,max:max,rolls:rolls,eff:eff,koText:koText,koClass:koClass,koHits:koHits,guaranteed:Math.ceil(HP/min),randKO:randKO,notes:notes,A:A,D:D,power:power,moveType:moveType,stab:stab};
+}
+
+/* ================= UI ================= */
+var $ = function(id){ return document.getElementById(id);};
+var defSelect = $("def-select");
+
+function fillDefSelect(filter){
+var cur = defSelect.value;
+defSelect.innerHTML = "";
+POKEMON.forEach(function(p){
+if (filter && p.name.indexOf(filter)<0) return;
+var o = document.createElement("option"); o.value = p.name; o.textContent = p.name;
+defSelect.appendChild(o);
+});
+if (cur && pokeByName(cur) && (!filter || cur.indexOf(filter)>=0)) defSelect.value = cur;
+if (!defSelect.value && defSelect.options.length) defSelect.selectedIndex = 0;
+}
+function currentDefStats(){
+var def = pokeByName(defSelect.value) || POKEMON[0];
+var spH = clampSP($("sp-h").value), spB = clampSP($("sp-b").value), spD = clampSP($("sp-d").value);
+var nat = $("def-nature").value;
+var bMult = nat==="b"||nat==="bd"? 1.1: (nat==="db"? 0.9: 1.0);
+var dMult = nat==="d"||nat==="db"? 1.1: (nat==="bd"? 0.9: 1.0);
+var item = $("def-item").value;
+var HP = statHP(def.base[0], spH);
+var B = statOther(def.base[2], spB, bMult);
+var D = statOther(def.base[4], spD, dMult);
+if (item==="vest") D = Math.floor(D * 1.5);
+if (item==="evio"){ B = Math.floor(B*1.5); D = Math.floor(D*1.5);}
+return {def:def, HP:HP, B:B, D:D, spH:spH, spB:spB, spD:spD};
+}
+function clampSP(v){ v = parseInt(v,10); if (isNaN(v)) v=0; return Math.max(0, Math.min(32, v));}
+
+function renderDefInfo(){
+var s = currentDefStats(), def = s.def;
+$("def-ability").textContent = "特性：" + def.ability;
+var total = s.spH + s.spB + s.spD;
+var tt = $("sp-total");
+tt.textContent = "耐久SP合計：" + total + " / 66（残りは攻撃・素早さ等に回す想定）";
+tt.className = "sp-total" + (total>66? " over": "");
+}
+
+function effLabel(e){
+if (e===0) return "効果なし";
+if (e===4) return "×4 弱点";
+if (e===2) return "×2 弱点";
+if (e===1) return "等倍";
+if (e===0.5) return "×1/2";
+if (e===0.25) return "×1/4";
+return "×"+e;
+}
+
+function render(){
+renderDefInfo();
+var s = currentDefStats(), def = s.def;
+var opts = { weather:$("weather").value, terrain:$("terrain").value, wall:$("wall").value,
+crit:$("crit").checked, autoField:$("auto-field").checked, defItem:$("def-item").value};
+var q = $("move-search").value.trim();
+var rows = [];
+ATTACKERS.forEach(function(atk){
+atk.moves.forEach(function(mv){
+var r = calcDamage(atk, mv, def, s, opts);
+rows.push({atk:atk, mv:mv, r:r});
+});
+});
+var koLo = parseInt($("ko-min").value, 10), koHi = parseInt($("ko-max").value, 10);
+if (!isNaN(koLo) || !isNaN(koHi)) rows = rows.filter(function(x){
+var g = x.r.guaranteed;
+if (!isFinite(g)) return false;
+if (!isNaN(koLo) && g < koLo) return false;
+if (!isNaN(koHi) && g > koHi) return false;
+return true;
+});
+if (q) rows = rows.filter(function(x){ return x.atk.poke.indexOf(q)>=0 || x.mv.name.indexOf(q)>=0;});
+rows.sort(function(a,b){ return (b.r.max/s.HP) - (a.r.max/s.HP) || b.r.min - a.r.min;});
+
+$("res-title").textContent = def.name + " が受けるダメージ一覧";
+$("res-count").textContent = rows.length + " 件";
+renderCustom(def, s, opts);
+
+if (!rows.length){
+$("results").innerHTML = '<div class="empty">条件に合う攻撃がありません。絞り込み（確定数・技名など）を緩めてみてください。</div>';
+return;
+}
+$("results").innerHTML = rows.map(function(x){
+var r = x.r, HP = s.HP;
+var minPct = (r.min/HP*100), maxPct = (r.max/HP*100);
+var barW = Math.min(100, maxPct), minMark = Math.min(100, minPct);
+var effCls = r.eff===4?"x4":r.eff===2?"x2":r.eff===0.5?"x05":r.eff===0.25?"x025":r.eff===0?"x0":"";
+var dmgHtml = r.eff===0
+? '<span class="dmg-num">0</span><span class="dmg-pct">効果がないようです</span>'
+: '<span class="dmg-num">' + r.min + "〜" + r.max + '</span><span class="dmg-pct">' + minPct.toFixed(1) + "%〜" + maxPct.toFixed(1) + '%</span><span class="ko ' + r.koClass + '">' + r.koText + '</span>';
+return '<article class="row-card">'
++ '<div class="row-top"><span class="atk-name">' + x.atk.poke + '</span><span class="atk-set">' + x.atk.nature + " " + x.atk.spLabel + " ／ " + x.atk.item + " ／ 攻撃実数値 " + r.A + '</span></div>'
++ '<div class="move-line"><span class="tbadge" style="background:'+TYPE_COLORS[r.moveType]+'">' + r.moveType + '</span>'
++ '<span class="move-name">' + x.mv.name + '</span><span class="cat">' + x.mv.cat + "・威力" + r.power + '</span>'
++ '<span class="eff ' + effCls + '">' + effLabel(r.eff) + '</span></div>'
++ '<div class="dmg-line">' + dmgHtml + '</div>'
++ (r.eff>0? '<div class="bar" aria-hidden="true"><i style="width:'+barW+'%"></i><span class="min-mark" style="left:'+minMark+'%"></span></div>': '')
++ (r.eff>0? '<div class="rolls">乱数16通り：' + r.rolls.join(", ") + '</div>': '')
++ (r.notes.length? '<div class="row-note">' + r.notes.join("／") + '</div>': '')
++ '</article>';
+}).join("");
+}
+
+
+/* ================= 攻撃側カスタム ================= */
+var TRAITS = {"メガボーマンダ":{aerilate:true},"ハッサム":{technician:true},"イダイトウ♂":{adaptability:true},
+"マスカーニャ":{protean:true},"エースバーン":{protean:true},"ゲッコウガ":{protean:true},
+"メガメタグロス":{toughClaws:true},"メガグソクムシャ":{toughClaws:true},
+"イエッサン♂":{autoTerrain:"psychic"},"メガリザードンY":{autoWeather:"sun"},"ゴリランダー":{autoTerrain:"grassy"},
+"メガカメックス":{megaLauncher:true},"メガスターミー":{hugePower:true},"ヒスイダイケンキ":{sharpness:true},"パーモット":{ironFist:true},"メガフラエッテ":{fairyAura:true},"ギルガルド":{stanceBlade:true}};
+var atkSelect = $("atk-select");
+function atkForms(){ return Object.keys(POKEDEX);}
+function fillAtkSelect(filter){
+var cur = atkSelect.value;
+atkSelect.innerHTML = "";
+atkForms().forEach(function(f){
+if (filter && f.indexOf(filter)<0) return;
+var p = pokeByName(f), d = POKEDEX[f];
+var o = document.createElement("option"); o.value = f;
+o.textContent = f;
+atkSelect.appendChild(o);
+});
+if (cur && POKEDEX[cur] && (!filter || cur.indexOf(filter)>=0)) atkSelect.value = cur;
+if (!atkSelect.value && atkSelect.options.length) atkSelect.selectedIndex = 0;
+}
+/* 攻撃側のHP・防御・特防の配分は表示せず、選んだプリセットの値を内部計算用に保持する */
+var atkInternalSP = {H:0, B:0, D:0};
+function spObjFromInputs(){
+return {H:atkInternalSP.H||0,A:clampSP($("asp-a").value),B:atkInternalSP.B||0,
+C:clampSP($("asp-c").value),D:atkInternalSP.D||0,S:clampSP($("asp-s").value)};
+}
+function setSPInputs(sp){
+atkInternalSP = {H:sp.H||0, B:sp.B||0, D:sp.D||0};
+$("asp-a").value=sp.A||0; $("asp-c").value=sp.C||0; $("asp-s").value=sp.S||0;
+}
+function spLabel(sp){
+var parts=[]; var K=["H","A","B","C","D","S"];
+K.forEach(function(k){ if(sp[k]) parts.push(k+sp[k]);});
+return parts.length? parts.join(" "): "無振り";
+}
+function spLabelAtk(sp){
+var parts=[]; var K=["A","C","S"];
+var NM={"A":"こうげき","C":"とくこう","S":"すばやさ"};
+K.forEach(function(k){ if(sp[k]) parts.push(NM[k]+sp[k]);});
+return parts.length? parts.join("・"): "攻撃系は無振り";
+}
+function anyMoveNames(){ return Object.keys(MOVES_DB).sort(function(a,b){ return a.localeCompare(b,"ja");});}
+function resolveSlotMove(i){
+var sel=$("atk-move-"+i); if(!sel || !sel.value) return null;
+if (sel.value==="__any__"){
+var sub=$("atk-any-"+i); if(!sub || !sub.value) return null;
+var adb=MOVES_DB[sub.value]; if(!adb) return null;
+return {name:sub.value, db:adb, any:true};
+}
+return {name:sel.value, db:MOVES_DB[sel.value] || null, any:false};
+}
+function syncAnyWrap(i){
+var sel=$("atk-move-"+i), w=$("atk-any-wrap-"+i);
+if(!sel || !w) return;
+w.style.display = sel.value==="__any__"? "": "none";
+}
+function updateAtkStatVisibility(){
+var hasPhys=false, hasSpec=false, hasDmg=false;
+for (var i=0;i<2;i++){
+var rm=resolveSlotMove(i); if(!rm || !rm.db) continue;
+var db=rm.db;
+hasDmg=true;
+var o=db.o||{};
+if (db.c==="特殊") hasSpec=true;
+else if (db.c==="物理" && !o.bodyPress && !o.foulPlay) hasPhys=true;
+}
+var aw=$("asp-a-wrap"), cw=$("asp-c-wrap");
+if (aw) aw.style.display = (!hasDmg || hasPhys)? "": "none";
+if (cw) cw.style.display = (!hasDmg || hasSpec)? "": "none";
+/* 能力ランクは技の物理・特殊にかかわらず両方を常に表示し、それぞれ独立に設定できるようにする */
+var ra=$("rank-a-wrap"), rc=$("rank-c-wrap");
+if (ra) ra.style.display = "";
+if (rc) rc.style.display = "";
+}
+function setupAtkPanel(){
+var form = atkSelect.value; if (!form || !POKEDEX[form]) return;
+var d = POKEDEX[form], p = pokeByName(form);
+/* 性格（上昇／下降のみ） */
+var natSel = $("atk-nature"); natSel.innerHTML = "";
+d.natures.forEach(function(n, i){
+var o = document.createElement("option"); o.value = i;
+o.textContent = n.name + "（" + (n.up? n.up+"↑": "―") + " / " + (n.down? n.down+"↓": "―") + "）";
+natSel.appendChild(o);
+});
+var on = document.createElement("option"); on.value = "-1"; on.textContent = "補正なし";
+natSel.appendChild(on); natSel.value = "0";
+/* 配分プリセット：先頭が個別1位 */
+var spSel = $("atk-spread"); spSel.innerHTML = "";
+d.spreads.forEach(function(s, i){
+var o = document.createElement("option"); o.value = i;
+o.textContent = (i===0? "個別1位：" : "個別"+(i+1)+"位：") + spLabelAtk(s.sp) + "（" + s.pct + "%）";
+spSel.appendChild(o);
+});
+var oc = document.createElement("option"); oc.value = "-1"; oc.textContent = "カスタム（下の数値を直接変更）";
+spSel.appendChild(oc); spSel.value = "0";
+if (d.spreads.length) setSPInputs(d.spreads[0].sp);
+/* 技セレクト×2：採用技一覧＋「任意の技」（全技から選択） */
+var wrap = $("atk-moves"); wrap.innerHTML = "";
+var dmgMoves = d.moves.filter(function(m){ return MOVES_DB[m];});
+var anyNames = anyMoveNames();
+for (var s2=0; s2<2; s2++){
+(function(idx){
+var sel = document.createElement("select");
+sel.className = "move-pick"; sel.id = "atk-move-"+idx; sel.setAttribute("aria-label", "技"+(idx+1));
+var o0 = document.createElement("option"); o0.value=""; o0.textContent = "― 技"+(idx+1)+"：なし ―"; sel.appendChild(o0);
+d.moves.forEach(function(m){
+var o = document.createElement("option"); o.value = m;
+var db = MOVES_DB[m];
+o.textContent = m + (db? "（"+db.t+"・"+db.c+"・威力"+db.p+"）": "（変化技・ダメージなし）");
+sel.appendChild(o);
+});
+var oa = document.createElement("option"); oa.value="__any__"; oa.textContent = "任意の技（採用技一覧以外から選ぶ）"; sel.appendChild(oa);
+if (dmgMoves[idx]) sel.value = dmgMoves[idx];
+wrap.appendChild(sel);
+var aw = document.createElement("div");
+aw.className = "any-wrap"; aw.id = "atk-any-wrap-"+idx; aw.style.display = "none";
+var lab = document.createElement("label"); lab.className = "f"; lab.htmlFor = "atk-any-"+idx;
+lab.textContent = "任意の技（全技から選択・そのポケモンが覚えない技も可）"; aw.appendChild(lab);
+var srch = document.createElement("input"); srch.type = "search"; srch.id = "atk-any-search-"+idx;
+srch.placeholder = "技名で絞り込み　例：かみなり、ぼうふう、ドラゴン"; srch.setAttribute("autocomplete","off"); aw.appendChild(srch);
+var sub = document.createElement("select"); sub.id = "atk-any-"+idx; sub.setAttribute("aria-label", "任意の技"+(idx+1));
+var so0 = document.createElement("option"); so0.value=""; so0.textContent = "― 技を選んでください ―"; sub.appendChild(so0);
+anyNames.forEach(function(mn){
+var oo = document.createElement("option"); oo.value = mn;
+var adb = MOVES_DB[mn];
+oo.textContent = mn + "（"+adb.t+"・"+adb.c+"・威力"+adb.p+"）";
+sub.appendChild(oo);
+});
+aw.appendChild(sub);
+wrap.appendChild(aw);
+sel.addEventListener("change", function(){ syncAnyWrap(idx); updateAtkStatVisibility(); render();});
+sub.addEventListener("change", function(){ updateAtkStatVisibility(); render();});
+srch.addEventListener("input", function(){
+var q = srch.value.trim();
+for (var oi=1; oi<sub.options.length; oi++){
+var op = sub.options[oi];
+op.hidden = !!q && op.value.indexOf(q)<0 && op.textContent.indexOf(q)<0;
+}
+});
+})(s2);
+}
+$("atk-src").innerHTML = '出典：<a href="https://champs.pokedb.tokyo/pokemon/show/' + d.code + '?season=8&rule=0" target="_blank" rel="noopener">バトルデータベース チャンピオンズ ― ' + form + '（シーズンM-8）</a>（メガシンカ形態は進化前の使用率データを流用）';
+updateAtkStatVisibility();
+updateAspTotal();
+}
+function updateAspTotal(){
+var sp = spObjFromInputs(), tot = sp.A+sp.C+sp.S;
+var el = $("asp-total");
+el.textContent = "表示中の能力ポイント合計（こうげき・とくこう・すばやさ）：" + tot;
+el.className = "sp-total";
+}
+function buildCustomAtk(){
+var form = atkSelect.value; if (!form || !POKEDEX[form]) return null;
+var d = POKEDEX[form];
+var ni = parseInt($("atk-nature").value, 10);
+var nat = ni>=0? d.natures[ni]: null;
+var itemEl = $("atk-item");
+var itemKind = itemEl? itemEl.value: "none";
+var itemNames = {none:"持ち物なし", band:"こだわりハチマキ", specs:"こだわりメガネ", orb:"いのちのたま", belt:"たつじんのおび", scarf:"こだわりスカーフ"};
+var rankA = parseInt($("atk-rank-a").value, 10); if (isNaN(rankA)) rankA = 0;
+var rankC = parseInt($("atk-rank-c").value, 10); if (isNaN(rankC)) rankC = 0;
+var atk = {poke:form, nature: nat? nat.name: "補正なし", spLabel: spLabelAtk(spObjFromInputs()),
+item: itemNames[itemKind] || "持ち物なし", itemKind: itemKind, rankA: rankA, rankC: rankC,
+_custom:{sp:spObjFromInputs(), up: nat? nat.up: null, down: nat? nat.down: null, rankA: rankA, rankC: rankC}};
+var tr = TRAITS[form] || {};
+for (var k in tr) atk[k] = tr[k];
+return atk;
+}
+function renderCustom(def, defStats, opts){
+var box = $("custom-results"); if (!box) return;
+var atk = buildCustomAtk();
+if (!atk){ box.innerHTML=""; return;}
+$("custom-title").textContent = atk.poke + "（カスタム） → " + def.name;
+var cards = [];
+for (var i=0;i<2;i++){
+var rm = resolveSlotMove(i); if (!rm) continue;
+var name = rm.name, db = rm.db;
+if (!db){
+cards.push('<article class="row-card"><div class="move-line"><span class="move-name">'+name+'</span><span class="cat">変化技</span></div><div class="dmg-line"><span class="dmg-pct">ダメージなし（変化・補助技）</span></div></article>');
+continue;
+}
+var mv = M(name, db.t, db.c, db.p, db.o || null);
+var key = mv.bodyPress? "B": (mv.cat==="物理"? "A": "C");
+var atk2 = {}; for (var k2 in atk) atk2[k2]=atk[k2]; atk2.atkKey = key;
+var r = calcDamage(atk2, mv, def, defStats, opts);
+var HP = defStats.HP;
+var minPct=(r.min/HP*100), maxPct=(r.max/HP*100);
+var barW=Math.min(100,maxPct), minMark=Math.min(100,minPct);
+var effCls = r.eff===4?"x4":r.eff===2?"x2":r.eff===0.5?"x05":r.eff===0.25?"x025":r.eff===0?"x0":"";
+var dmgHtml = r.eff===0
+? '<span class="dmg-num">0</span><span class="dmg-pct">効果がないようです</span>'
+: '<span class="dmg-num">'+r.min+"〜"+r.max+'</span><span class="dmg-pct">'+minPct.toFixed(1)+"%〜"+maxPct.toFixed(1)+'%</span><span class="ko '+r.koClass+'">'+r.koText+'</span>';
+var rankTxt = "";
+if (key==="A" && atk.rankA) rankTxt = " ／ こうげきランク" + (atk.rankA>0? "+": "") + atk.rankA;
+if (key==="C" && atk.rankC) rankTxt = " ／ とくこうランク" + (atk.rankC>0? "+": "") + atk.rankC;
+cards.push('<article class="row-card">'
++ '<div class="row-top"><span class="atk-name">'+atk.poke+'</span><span class="atk-set">'+atk.nature+" "+atk.spLabel+" ／ "+atk.item+rankTxt+'</span></div>'
++ '<div class="move-line"><span class="tbadge" style="background:'+TYPE_COLORS[r.moveType]+'">'+r.moveType+'</span>'
++ '<span class="move-name">'+name+'</span><span class="cat">'+mv.cat+"・威力"+r.power+'</span>' + (rm.any? '<span class="cat">任意の技</span>': '')
++ '<span class="eff '+effCls+'">'+effLabel(r.eff)+'</span></div>'
++ '<div class="dmg-line">'+dmgHtml+'</div>'
++ (r.eff>0? '<div class="bar" aria-hidden="true"><i style="width:'+barW+'%"></i><span class="min-mark" style="left:'+minMark+'%"></span></div>': '')
++ (r.eff>0? '<div class="rolls">乱数16通り：'+r.rolls.join(", ")+'</div>': '')
++ (r.notes.length? '<div class="row-note">'+r.notes.join("／")+'</div>': '')
++ '</article>');
+}
+$("custom-count").textContent = cards.length + " 件";
+box.innerHTML = cards.length? cards.join(""): '<div class="empty">技が選択されていません。</div>';
+}
+
+/* イベント */
+$("def-search").addEventListener("input", function(){ fillDefSelect(this.value.trim()); render();});
+defSelect.addEventListener("change", render);
+["sp-h","sp-b","sp-d"].forEach(function(id){
+$(id).addEventListener("input", render);
+});
+["def-nature","def-item","weather","terrain","wall"].forEach(function(id){ $(id).addEventListener("change", render);});
+["crit","auto-field"].forEach(function(id){ $(id).addEventListener("change", render);});
+$("move-search").addEventListener("input", render);
+["ko-min","ko-max"].forEach(function(id){ $(id).addEventListener("input", render);});
+
+$("atk-search").addEventListener("input", function(){ fillAtkSelect(this.value.trim()); setupAtkPanel(); render();});
+atkSelect.addEventListener("change", function(){ setupAtkPanel(); render();});
+$("atk-nature").addEventListener("change", render);
+$("atk-item").addEventListener("change", render);
+$("atk-rank-a").addEventListener("change", render);
+$("atk-rank-c").addEventListener("change", render);
+$("atk-spread").addEventListener("change", function(){
+var d = POKEDEX[atkSelect.value]; var i = parseInt(this.value,10);
+if (d && i>=0 && d.spreads[i]) setSPInputs(d.spreads[i].sp);
+updateAspTotal(); render();
+});
+["asp-a","asp-c","asp-s"].forEach(function(id){
+$(id).addEventListener("input", function(){ $("atk-spread").value="-1"; updateAspTotal(); render();});
+});
+fillAtkSelect("");
+atkSelect.value = "ガブリアス";
+setupAtkPanel();
+fillDefSelect("");
+defSelect.value = "ガブリアス";
+render();
+</script>
+</body>
+</html>
