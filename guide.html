@@ -1,0 +1,999 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<link rel="icon" href="data:,">
+<title>ポケモン ダメージ計算機 操作説明</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f5f2;
+    --surface:#ffffff;
+    --surface-2:#efefea;
+    --surface-3:#f8f8f5;
+    --text:#191d22;
+    --muted:#5c6672;
+    --muted-2:#7a8592;
+    --border:#e3e1d8;
+    --border-strong:#d4d1c6;
+    --accent:#c1272d;
+    --accent-soft:#fdf1f1;
+    --accent-text:#9e1f24;
+    --navy:#1d3a5f;
+    --navy-soft:#edf2f8;
+    --navy-text:#1d3a5f;
+    --green:#14734a;
+    --green-soft:#eaf6f0;
+    --amber:#9a5b00;
+    --amber-soft:#fff6e0;
+    --shadow:0 1px 3px rgba(20,20,20,.06),0 8px 24px rgba(20,20,20,.05);
+    --radius-lg:18px;
+    --radius-md:12px;
+    --radius-sm:8px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#121417;
+      --surface:#1b1e22;
+      --surface-2:#24282d;
+      --surface-3:#202329;
+      --text:#eef0f2;
+      --muted:#a6afb9;
+      --muted-2:#8b95a1;
+      --border:#31363d;
+      --border-strong:#3e444d;
+      --accent:#ff7a7a;
+      --accent-soft:#2e1f21;
+      --accent-text:#ffb1b1;
+      --navy:#8fb4e6;
+      --navy-soft:#1e2a3d;
+      --navy-text:#b9d1f2;
+      --green:#5ecf9a;
+      --green-soft:#173328;
+      --amber:#f2c36b;
+      --amber-soft:#332a14;
+      --shadow:0 1px 3px rgba(0,0,0,.3),0 8px 24px rgba(0,0,0,.25);
+    }
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Noto Sans JP",system-ui,-apple-system,"Hiragino Kaku Gothic ProN",sans-serif;
+    font-size:16px;
+    line-height:1.85;
+    -webkit-font-smoothing:antialiased;
+  }
+  button,[role="button"],select,summary,a{ min-height:36px; }
+  a{color:var(--navy-text)}
+  .wrap{max-width:920px;margin:0 auto;padding:0 20px 64px}
+
+  /* Header */
+  .hero{padding:36px 0 8px}
+  .hero-tag{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:13px;font-weight:700;letter-spacing:.04em;
+    color:var(--accent-text);background:var(--accent-soft);
+    border:1px solid var(--border);
+    padding:6px 12px;border-radius:999px;
+  }
+  .hero-tag::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}
+  h1{
+    font-size:clamp(28px,5vw,40px);
+    line-height:1.25;font-weight:800;letter-spacing:.01em;
+    margin:16px 0 12px;
+  }
+  h1 .thin{display:block;font-size:.52em;font-weight:700;color:var(--muted);margin-top:6px;letter-spacing:.02em}
+  .lead{font-size:17px;line-height:1.9;color:var(--text);max-width:720px;margin:0}
+  .lead strong{color:var(--accent-text)}
+  .meta-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
+  .meta-chip{
+    font-size:13px;font-weight:600;color:var(--muted);
+    background:var(--surface);border:1px solid var(--border);
+    padding:7px 12px;border-radius:999px;line-height:1.4;
+  }
+  .meta-chip b{color:var(--text)}
+
+  /* TOC */
+  .toc{
+    margin:28px 0 8px;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius-lg);padding:16px 18px;box-shadow:var(--shadow);
+  }
+  .toc-title{font-size:13px;font-weight:800;letter-spacing:.06em;color:var(--muted);margin:0 0 10px}
+  .toc-links{display:flex;flex-wrap:wrap;gap:8px}
+  .toc-links a{
+    display:inline-flex;align-items:center;
+    text-decoration:none;font-size:14px;font-weight:600;color:var(--text);
+    background:var(--surface-3);border:1px solid var(--border);
+    padding:8px 14px;border-radius:999px;line-height:1.3;
+  }
+  .toc-links a:hover{border-color:var(--border-strong);background:var(--surface-2)}
+  .toc-links a span{color:var(--accent);font-weight:800;margin-right:6px}
+
+  /* Quick start */
+  .quick{
+    margin-top:20px;background:var(--navy);color:#fff;border-radius:var(--radius-lg);
+    padding:22px 22px 18px;
+  }
+  @media (prefers-color-scheme: dark){ .quick{background:#1e2d47} }
+  .quick h2{color:#fff;font-size:18px;margin:0 0 4px;border:none;padding:0}
+  .quick p.sub{color:rgba(255,255,255,.82);font-size:14px;margin:0 0 16px;line-height:1.7}
+  .quick-steps{display:grid;grid-template-columns:1fr;gap:10px}
+  @media(min-width:700px){ .quick-steps{grid-template-columns:1fr 1fr 1fr} }
+  .qstep{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.16);border-radius:var(--radius-md);padding:14px 14px 12px}
+  .qstep-num{font-size:12px;font-weight:800;letter-spacing:.08em;color:#ffd9a8;margin-bottom:4px}
+  .qstep h3{font-size:15px;margin:0 0 4px;color:#fff;line-height:1.5}
+  .qstep p{font-size:13.5px;line-height:1.7;color:rgba(255,255,255,.88);margin:0}
+
+  /* Sections */
+  section{margin-top:36px;scroll-margin-top:20px}
+  h2{
+    font-size:22px;font-weight:800;line-height:1.4;
+    margin:0 0 6px;padding-bottom:10px;border-bottom:2px solid var(--accent);
+    display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+  }
+  h2 .no{
+    font-size:13px;font-weight:800;color:#fff;background:var(--accent);
+    width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex:none;transform:translateY(2px);
+  }
+  h3{font-size:17px;font-weight:800;margin:22px 0 8px;line-height:1.5}
+  h3:first-of-type{margin-top:14px}
+  p{margin:8px 0}
+  .section-lead{color:var(--muted);font-size:15px;margin-top:8px}
+  ul,ol{margin:8px 0 8px 1.2em;padding:0}
+  li{margin:4px 0}
+  li::marker{color:var(--accent);font-weight:700}
+
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:20px;box-shadow:var(--shadow);margin-top:14px;
+  }
+  .card h3{margin-top:0}
+
+  /* Layout mock */
+  .layout-mock{
+    display:grid;grid-template-columns:1fr;gap:12px;margin-top:14px;
+  }
+  @media(min-width:760px){ .layout-mock{grid-template-columns:380px 1fr} }
+  .mock-col{display:grid;gap:12px;align-content:start}
+  .mock-panel{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);
+    padding:14px 16px;box-shadow:var(--shadow);position:relative;
+  }
+  .mock-panel.result{min-height:100%}
+  .mock-badge{
+    display:inline-block;font-size:11px;font-weight:800;letter-spacing:.06em;
+    padding:3px 8px;border-radius:999px;margin-bottom:8px;line-height:1.4;
+  }
+  .badge-def{color:var(--accent-text);background:var(--accent-soft);border:1px solid var(--border)}
+  .badge-atk{color:var(--navy-text);background:var(--navy-soft);border:1px solid var(--border)}
+  .badge-res{color:var(--green);background:var(--green-soft);border:1px solid var(--border)}
+  @media (prefers-color-scheme: dark){ .badge-res{color:var(--green)} }
+  .mock-panel h4{margin:0 0 6px;font-size:15px}
+  .mock-panel p,.mock-panel li{font-size:13.5px;color:var(--muted);line-height:1.7}
+  .mock-panel ul{margin:4px 0 0 1.1em}
+  .mock-num{
+    position:absolute;top:-10px;right:12px;width:24px;height:24px;border-radius:50%;
+    background:var(--text);color:var(--bg);font-size:13px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .mock-note{font-size:13px;color:var(--muted);margin-top:10px}
+
+  /* Steps */
+  .steps{display:grid;gap:12px;margin-top:14px}
+  .step{
+    display:grid;grid-template-columns:44px 1fr;gap:14px;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:18px;box-shadow:var(--shadow);
+  }
+  .step-num{
+    width:44px;height:44px;border-radius:50%;background:var(--accent);color:#fff;
+    font-weight:800;font-size:19px;display:flex;align-items:center;justify-content:center;
+  }
+  .step h3{margin:2px 0 6px;font-size:16px}
+  .step p,.step li{font-size:14.5px}
+  .step p{color:var(--text)}
+  .step .hint{font-size:13.5px;color:var(--muted);background:var(--surface-3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-top:10px;line-height:1.7}
+  .hint b{color:var(--text)}
+
+  /* Definition table */
+  .def-table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14.5px}
+  .def-table th,.def-table td{ text-align:left;vertical-align:top;padding:12px 12px;border-bottom:1px solid var(--border) }
+  .def-table th{width:34%;font-weight:800;background:var(--surface-3);border-radius:0}
+  .def-table tr:last-child th,.def-table tr:last-child td{border-bottom:none}
+  .def-table td{color:var(--text)}
+  .def-table td small{display:block;color:var(--muted);font-size:13px;line-height:1.6;margin-top:2px}
+  @media(max-width:640px){
+    .def-table th,.def-table td{display:block;width:100%;border-bottom:none;padding:8px 12px}
+    .def-table tr{display:block;border-bottom:1px solid var(--border);padding:4px 0}
+    .def-table tr:last-child{border-bottom:none}
+    .def-table th{background:transparent;padding-bottom:0}
+  }
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow);margin-top:14px}
+  .table-wrap .def-table{margin-top:0}
+
+  /* Result example */
+  .result-example{margin-top:14px}
+  .result-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+  .result-head strong{font-size:14px}
+  .result-head span{font-size:12px;color:var(--muted);background:var(--surface-2);border:1px solid var(--border);padding:4px 8px;border-radius:999px}
+  .dmg-row{border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px;margin-bottom:8px;background:var(--surface)}
+  .dmg-top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+  .dmg-move{font-weight:800;font-size:15px}
+  .dmg-move small{font-weight:600;color:var(--muted);font-size:13px}
+  .dmg-val{font-weight:800;font-size:15px;white-space:nowrap}
+  .dmg-val small{font-weight:600;color:var(--muted)}
+  .bar{height:10px;background:var(--surface-2);border-radius:999px;overflow:hidden;margin:8px 0 6px;border:1px solid var(--border)}
+  .bar i{display:block;height:100%;border-radius:999px}
+  .bar-red{background:#d43a3a}.bar-orange{background:#e08a1e}.bar-blue{background:#3a6fb5}
+  .bar-green{background:#3a9e6b}.bar-yellow{background:#dfae12}
+  .dmg-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}
+  .tag{font-size:12px;font-weight:800;padding:3px 8px;border-radius:999px;line-height:1.4;display:inline-block}
+  .tag-red{color:#9e1f24;background:#fdecec;border:1px solid #f3c2c2}
+  .tag-orange{color:#7a4a00;background:#fff3d6;border:1px solid #ecd9a0}
+  .tag-gray{color:var(--muted);background:var(--surface-2);border:1px solid var(--border)}
+  @media (prefers-color-scheme: dark){
+    .tag-red{color:#ffb1b1;background:#2e1f21;border-color:#4a2d2f}
+    .tag-orange{color:#f2c36b;background:#332a14;border-color:#4a3d1a}
+  }
+  .legend{display:grid;gap:8px;margin-top:12px}
+  @media(min-width:700px){ .legend{grid-template-columns:1fr 1fr} }
+  .legend-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px 14px}
+  .legend-item b{font-size:14px}
+  .legend-item p{font-size:13.5px;color:var(--muted);margin:2px 0 0;line-height:1.7}
+
+  /* Callouts */
+  .callout{border-radius:var(--radius-md);padding:16px 18px;margin-top:14px;border:1px solid var(--border)}
+  .callout p{margin:4px 0;font-size:14.5px}
+  .callout-title{font-weight:800;font-size:15px;margin:0 0 6px;display:flex;gap:8px;align-items:center}
+  .callout-amber{background:var(--amber-soft)}
+  .callout-amber .callout-title{color:var(--amber)}
+  .callout-green{background:var(--green-soft)}
+  .callout-green .callout-title{color:var(--green)}
+  .callout-plain{background:var(--surface-3)}
+
+  /* Item chips */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .chip{font-size:13.5px;font-weight:600;background:var(--surface);border:1px solid var(--border);padding:7px 12px;border-radius:999px;line-height:1.4}
+  .chip small{color:var(--muted);font-weight:500}
+
+  /* SP visual */
+  .sp-visual{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow);margin-top:14px}
+  .sp-bar{display:flex;height:22px;border-radius:999px;overflow:hidden;border:1px solid var(--border-strong);margin:10px 0}
+  .sp-bar div{display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;white-space:nowrap;overflow:hidden}
+  .sp-hp{background:#3a9e6b}.sp-def{background:#3a6fb5}.sp-spd{background:#7a6bc2}.sp-rest{background:#9aa3ad}
+  .sp-caption{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--muted)}
+
+  /* FAQ */
+  details{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);
+    margin-top:10px;overflow:hidden;
+  }
+  details summary{
+    cursor:pointer;font-weight:700;font-size:15px;padding:14px 16px;list-style:none;
+    display:flex;justify-content:space-between;align-items:center;gap:12px;line-height:1.5;
+  }
+  details summary::-webkit-details-marker{display:none}
+  details summary::after{content:"+";font-size:20px;font-weight:400;color:var(--muted);flex:none}
+  details[open ] summary::after{content:"−"}
+  details .detail-body{padding:0 16px 16px;font-size:14.5px;color:var(--text)}
+  details .detail-body p{margin:4px 0}
+
+  .two-col{display:grid;gap:12px;margin-top:14px}
+  @media(min-width:700px){ .two-col{grid-template-columns:1fr 1fr} }
+  .mini-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-md);padding:16px}
+  .mini-card h3{margin-top:0;font-size:15px}
+  .mini-card p,.mini-card li{font-size:14px;color:var(--muted)}
+  .mini-card p{color:var(--text)}
+  .mini-card ul{color:var(--muted)}
+
+  footer{margin-top:44px;border-top:1px solid var(--border);padding-top:20px}
+  footer p{font-size:13px;color:var(--muted);line-height:1.8}
+  footer a{word-break:break-all}
+  .back-top{
+    display:inline-flex;align-items:center;justify-content:center;
+    margin-top:16px;text-decoration:none;font-weight:700;font-size:14px;color:var(--text);
+    background:var(--surface);border:1px solid var(--border);padding:10px 18px;border-radius:999px;
+  }
+  kbd{
+    font-family:inherit;font-size:.92em;background:var(--surface-2);border:1px solid var(--border-strong);
+    border-bottom-width:2px;border-radius:6px;padding:1px 6px;
+  }
+  .nowrap{white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <span class="hero-tag">ポケモンチャンピオンズ準拠 ・ シングルバトル用</span>
+    <h1>被ダメージ計算機<span class="thin">操作説明 ― ポケモンチャンピオンズ準拠</span></h1>
+    <p class="lead">防御側のポケモンを1匹選ぶだけで、環境で使われる<strong>登録アタッカー54種（59エントリー）</strong>からのダメージを一括で計算し、痛い順に表示します。防御側・攻撃側の選択肢は<strong>全1025種＋フォルム違いで1281件</strong>（図鑑番号順）から選べます。このページでは、画面の見方から結果の読み方、耐久調整・火力調整の逆算まで、初めて使う方にも分かるように説明します。</p>
+    <div class="meta-row" aria-label="計算の前提">
+      <span class="meta-chip">レベル <b>50固定</b></span>
+      <span class="meta-chip">個体値 <b>31固定</b></span>
+      <span class="meta-chip">能力ポイント <b>合計66 ／ 1能力32まで</b></span>
+      <span class="meta-chip">選択肢 <b>1281件・番号順</b></span>
+      <span class="meta-chip">対象 <b>シーズンM-8 シングル</b></span>
+    </div>
+  </header>
+
+  <nav class="toc" aria-label="目次">
+    <p class="toc-title">目次</p>
+    <div class="toc-links">
+      <a href="#overview"><span>1</span>できること</a>
+      <a href="#layout"><span>2</span>画面の構成</a>
+      <a href="#howto"><span>3</span>基本の使い方</a>
+      <a href="#defender"><span>4</span>防御側の設定</a>
+      <a href="#attacker"><span>5</span>攻撃側カスタム</a>
+      <a href="#result"><span>6</span>結果の読み方</a>
+      <a href="#filter"><span>7</span>場の条件と表示</a>
+      <a href="#rules"><span>8</span>計算の前提</a>
+      <a href="#notes"><span>9</span>対象外・注意点</a>
+      <a href="#faq"><span>10</span>よくある質問</a>
+    </div>
+  </nav>
+
+  <div class="quick" aria-label="クイックスタート">
+    <h2>まずはこの3ステップだけ</h2>
+    <p class="sub">細かい調整は後からで大丈夫です。最初は選ぶだけで結果が出ます。</p>
+    <div class="quick-steps">
+      <div class="qstep">
+        <div class="qstep-num">STEP 1</div>
+        <h3>防御側を選ぶ</h3>
+        <p>左上の「防御側ポケモン」で、ダメージを受けさせたいポケモンを選びます。名前の一部で検索できます。</p>
+      </div>
+      <div class="qstep">
+        <div class="qstep-num">STEP 2</div>
+        <h3>耐久を合わせる</h3>
+        <p>HP・防御・特防の能力ポイントと性格補正を、自分の育成に合わせて入力します。</p>
+      </div>
+      <div class="qstep">
+        <div class="qstep-num">STEP 3</div>
+        <h3>右側の結果を見る</h3>
+        <p>痛い順に並んだ一覧で「どの技でどれだけ減るか」「何発で倒れるか」を確認します。</p>
+      </div>
+    </div>
+  </div>
+
+  <section id="overview">
+    <h2><span class="no">1</span>この計算機でできること</h2>
+    <p class="section-lead">使い方は大きく4つあります。まずは一覧で全体を把握し、気になる相手だけカスタムで詳しく調べ、耐久調整と火力調整で振り方を決めるのがおすすめです。</p>
+    <div class="two-col">
+      <div class="mini-card">
+        <h3>① 受けるダメージ一覧（メイン）</h3>
+        <p>防御側を1匹選ぶと、登録アタッカー54種（59エントリー）× 使用率上位の技からのダメージを自動で全件計算します。</p>
+        <ul>
+          <li>ダメージが大きい順（痛い順）に並びます</li>
+          <li>1発で倒れる技・乱数で倒れる技が一目で分かります</li>
+          <li>技名などで絞り込みもできます</li>
+          <li>すなおこし・ゆきふらしなどの天候も自動で反映されます</li>
+        </ul>
+      </div>
+      <div class="mini-card">
+        <h3>② 攻撃側カスタム計算</h3>
+        <p>特定の相手を想定して、技・配分・持ち物を変えながら個別に計算します。</p>
+        <ul>
+          <li>攻撃側のデータはバトルデータベースから呼び出し</li>
+          <li>技は最大2つまで、自由に選べます</li>
+          <li>こうげき／とくこうのランクも個別に設定できます</li>
+          <li>「任意の技」で一覧にない技も計算できます</li>
+          <li>げきりゅう・もうか・たたりめ・ひとでなしなどの条件付き補正も切り替えできます</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <h3>③ 耐久調整（必要なH・BDを逆算）</h3>
+      <p>「この技を確定2発で耐えるには、どれだけ振ればいい？」を自動で逆算する機能です。結果は次の<strong>2つの最小値を同時に</strong>表示します。どちらも<strong>最大ダメージ基準</strong>（相手のダメージが最大に出ても耐える＝確定で耐える）で計算します。</p>
+      <ul>
+        <li><b>Hのみの最小：</b>防御／特防は今のまま、HPだけを増やした場合の最小のH</li>
+        <li><b>完全な最小（BD振り直し込み）：</b>HP・防御／特防の配分自体を組み替えて、合計ポイントが最も少なくなる配分</li>
+        <li>今の配分で足りているか、あと何ポイント必要かが分かります。H32まで振っても耐えられない場合は、その旨が表示されます</li>
+        <li>1能力32まで・合計66までの範囲で収まるかどうかもあわせて確認できます</li>
+      </ul>
+      <p style="margin-bottom:0">詳しくは「6. 結果の読み方」の「耐久調整（逆算）」を見てください。</p>
+    </div>
+    <div class="card">
+      <h3>④ 火力調整（必要な攻撃SPを逆算）</h3>
+      <p>カスタム計算で選んだ攻撃側の技について、「この技で確定n発で倒すには、こうげき／とくこうにいくつ振ればいい？」を逆算する機能です。目標の確定発数を指定すると、必要な攻撃SPが表示されます。</p>
+      <ul>
+        <li>物理技なら「こうげき」、特殊技なら「とくこう」のSPが逆算の対象になります</li>
+        <li>判定は<strong>最小ダメージ基準</strong>です（ダメージが最小に出ても倒せる＝確定で倒す）</li>
+        <li>耐久調整（最大ダメージ基準）と合わせると、「耐える側」と「倒す側」の両方の境目が分かります</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="layout">
+    <h2><span class="no">2</span>画面の構成</h2>
+    <p class="section-lead">画面は左が入力、右が結果です。すべての欄はアコーディオン形式で、個別に折りたたむことができます。スマートフォン・タブレット・PCの画面幅に合わせたレスポンシブ表示で、狭い画面では上から「入力 → 結果」の順に縦に並びます。</p>
+
+    <div class="layout-mock" role="img" aria-label="画面構成の図：左上に防御側ポケモン、左下に攻撃側ポケモン、右側に計算結果">
+      <div class="mock-col">
+        <div class="mock-panel">
+          <span class="mock-num">1</span>
+          <span class="mock-badge badge-def">左上 ・ 入力</span>
+          <h4>防御側ポケモン</h4>
+          <p>ダメージを受ける側です。ここを変えると、右側の一覧がすべて再計算されます。</p>
+          <ul>
+            <li>ポケモンの検索・選択（全1281件・番号順）</li>
+            <li>お気に入り登録（「☆ お気に入りに追加」ボタン／ブラウザに保存）</li>
+            <li>HP／防御／特防の能力ポイント</li>
+            <li>性格・持ち物（欄内に「ここに性格を入力」等と表示）</li>
+          </ul>
+        </div>
+        <div class="mock-panel">
+          <span class="mock-num">2</span>
+          <span class="mock-badge badge-atk">左下 ・ 入力</span>
+          <h4>攻撃側ポケモン（カスタム計算）</h4>
+          <p>特定の1体を詳しく調べるための欄です。一覧とは別に、選んだ2つの技だけを計算します。</p>
+          <ul>
+            <li>ポケモン・性格・配分の呼び出し</li>
+            <li>技を最大2つ選択（任意の技も可）</li>
+            <li>こうげき／とくこうランクの個別設定</li>
+            <li>攻撃用持ち物の選択</li>
+          </ul>
+        </div>
+      </div>
+      <div class="mock-panel result">
+        <span class="mock-num">3</span>
+        <span class="mock-badge badge-res">右側 ・ 結果</span>
+        <h4>計算結果 ― 受けるダメージ一覧</h4>
+        <p>登録アタッカー全員からのダメージが、痛い順に並びます。各行にダメージ量・HPに対する割合・乱数の幅・何発で倒れるかが表示されます。</p>
+        <p>右側の並びは上から「場の条件」→「カスタム計算の結果」→「表示」→「受けるダメージ一覧」の順です。「場の条件」は天候（すなおこし・ゆきふらしなどの自動反映を含む）・フィールド・壁・条件付き補正など計算そのものに影響する条件、「表示」は確定数・先制技・技名などで一覧の表示だけを絞り込む欄で、2つは別のパネルに分かれています（詳しくは「7. 場の条件と表示」）。耐久調整（逆算）では、指定した技を耐えるために必要なポイントを「Hのみの最小」と「BD振り直し込みの完全な最小」の2つで確認でき、火力調整（逆算）では、選んだ技を確定n発で倒すために必要な攻撃SPを確認できます（詳しくは「6. 結果の読み方」）。各行のバーは、受けたあとの残りHPを表す対戦風の表示です。</p>
+        <p style="margin-top:12px">カスタム計算の結果も、このエリアに合わせて表示されます。左側で攻撃側や技を変えると、その場で数値が更新されます。</p>
+      </div>
+    </div>
+    <p class="mock-note">※ タイプ・種族値・弱点／耐性などのデータは計算の内部でのみ使われ、画面には表示されません。画面は「選ぶ・入力する・結果を見る」に絞られています。</p>
+
+    <div class="card">
+      <h3>すべての欄はアコーディオン（折りたたみ）</h3>
+      <p>防御側ポケモン、場の条件、攻撃側ポケモン（カスタム計算）、カスタム計算の結果、耐久調整、火力調整、表示、受けるダメージ一覧、前提の説明まで、<b>すべての欄が見出しタップで個別に折りたためます</b>。タイトルの下にも「各欄の見出しをタップすると折りたためます」という案内が表示されています。</p>
+      <ul>
+        <li>最初は<b>すべて開いた状態</b>です。開いている欄の見出しには▼、閉じている欄には▶が付きます。</li>
+        <li>開閉は<b>欄ごと独立</b>しています。1つ閉じても他の欄は変わりません。</li>
+        <li>欄を閉じると、左右どちらの列でも<b>下の欄が上に詰まって</b>表示され、空白は残りません。閉じた欄は見出しだけの細いバーになります。</li>
+        <li>閉じた欄の見出しには、<b>現在の選択内容・配分が小さく表示</b>されます（例：防御側・攻撃側ともに「ガブリアス・こうげき32・すばやさ32」のような配分表示）。開かなくても中身の概要が分かります。</li>
+        <li>折りたたんでも計算は止まりません。開き直すと最新の結果が見られます。</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>防御側ポケモンのお気に入り</h3>
+      <p>よく使う防御側ポケモンは<b>お気に入りに登録</b>できます。防御側パネルでポケモンを選んだ状態で、特性表示のすぐ下にある<b>「☆ お気に入りに追加」</b>ボタンをタップすると登録されます。登録されるとボタンが<b>「★ お気に入り済み（タップで解除）」</b>に変わり、<b>「★ ポケモン名」のチップ</b>が表示されます。</p>
+      <ul>
+        <li><b>呼び戻し：</b>チップをタップすると、そのポケモンを防御側にすぐ選べます。</li>
+        <li><b>解除：</b>登録済みの状態でボタンをもう一度タップすると、お気に入りから外れます。</li>
+        <li><b>保存されるのはポケモン名だけ</b>です。能力ポイントの配分・性格・持ち物は保存されないため、呼び戻したあとは自分の育成に合わせて設定し直してください。</li>
+        <li>お気に入りは<b>ブラウザに保存</b>されるため、同じブラウザではリロード後や次に開いたときも残っています。別のブラウザや端末には引き継がれません。</li>
+        <li><b>保存がブロックされている環境では：</b>ボタンをタップすると表示（☆→★とチップ）はすぐ変わりますが、ボタンの下に「保存できませんでした。このページを開いている間だけ有効で、再読み込みすると消えます」という注記が出ます。この場合は、そのページを開いている間だけお気に入りが有効で、再読み込みすると消えます。</li>
+        <li>お気に入りは計算結果には影響しません。防御側パネルを折りたたんでいるとボタンも隠れるため、登録・解除はパネルを開いた状態で行ってください。</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>背景色の切り替え（タイトル横）</h3>
+      <p>タイトルの横、「操作説明」リンクの並びにある「背景色」から、ページ全体の背景を <b>標準／ダーク／ベージュ／みどり</b> の4種類から選べます。白から離れた、目に優しい色にしたいときに使います。</p>
+      <ul>
+        <li>変わるのは<b>ページの背景（枠の外側）と枠外の文字色だけ</b>です。入力パネルやダメージ一覧のカードなど、<b>枠の中は常に白のまま</b>で、計算結果も変わりません。</li>
+        <li>選んだ色はその場で反映され、<b>ブラウザに保存</b>されるため、次に開いたときも同じ背景で表示されます。</li>
+        <li>色見本のドットが各色を表しています。みどりは少し濃いめのセージグリーンです。</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="howto">
+    <h2><span class="no">3</span>基本の使い方</h2>
+    <div class="steps">
+      <article class="step">
+        <div class="step-num">1</div>
+        <div>
+          <h3>防御側ポケモンを選ぶ</h3>
+          <p>左上の検索欄に名前の一部を入力します。たとえば <kbd>ガブ</kbd> と入れるとガブリアス、<kbd>ドリュ</kbd> と入れるとドリュウズのように絞り込めます。候補から目的のポケモンを選んでください。</p>
+          <p>選ぶと特性が自動で反映され、右側の一覧がそのポケモン向けに再計算されます。まずは何も変えずに一覧を眺めるだけでも大丈夫です。</p>
+        </div>
+      </article>
+      <article class="step">
+        <div class="step-num">2</div>
+        <div>
+          <h3>耐久の振り方を自分の育成に合わせる</h3>
+          <p>HP・防御・特防の3つの欄に、能力ポイント（SP）を数字で入力します。あわせて「性格補正」で、どの能力が上がる／下がる性格なのかを選びます。</p>
+          <div class="hint"><b>ポイント：</b>能力ポイントは合計66まで、1つの能力には32まで振れます。防御側では HP・防御・特防の3つだけを入力します。残りを攻撃や素早さに回す想定のため、3つの合計が66未満でも問題ありません。</div>
+        </div>
+      </article>
+      <article class="step">
+        <div class="step-num">3</div>
+        <div>
+          <h3>右側の一覧で「痛い技」を確認する</h3>
+          <p>一覧はダメージの大きい順です。上から順に見ることで、そのポケモンが苦手な相手と技が分かります。「確定1発」「乱数1発」と表示された技は特に注意が必要です（詳しくは「6. 結果の読み方」）。</p>
+          <p>特定の技だけを見たいときは、「表示」パネルの絞り込みで技名を入力します。たとえば「じしん」と入れると、じしんを使う全アタッカーの行だけが残ります。</p>
+        </div>
+      </article>
+      <article class="step">
+        <div class="step-num">4</div>
+        <div>
+          <h3>気になる相手はカスタム計算で深掘りする（任意）</h3>
+          <p>左下の攻撃側で相手ポケモンを選び、技・配分・持ち物を変えて計算します。「この配分なら耐えるか？」「持ち物を変えたらどうか？」といった確認に使います。手順の詳細は次の「5. 攻撃側カスタム計算」を見てください。</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="defender">
+    <h2><span class="no">4</span>防御側ポケモンの設定</h2>
+    <p class="section-lead">左上のパネルです。ここで設定した耐久に対して、全アタッカーからのダメージが計算されます。</p>
+    <div class="table-wrap">
+      <table class="def-table">
+        <tr>
+          <th>ポケモンを検索</th>
+          <td>名前の一部を入力して候補を絞り込む欄です。<small>ひらがな・カタカナの部分一致で検索できます。空欄に戻すと全ポケモンから選べます。</small></td>
+        </tr>
+        <tr>
+          <th>防御側ポケモン</th>
+          <td>ダメージを受けるポケモンを選びます。選択肢は<b>全1025種＋フォルム違いで全1281件</b>が<b>図鑑番号順</b>に並んでいます。<small>選んだポケモンのタイプや特性は自動で計算に反映されます。画面には表示されません。特性が未確認のため、メガヒードラン／メガダークライ／メガジガルデ／メガマギアナ／メガゼラオラ／メガシャリタツの6体は未収録です。</small></td>
+        </tr>
+        <tr>
+          <th>お気に入り<br><span style="font-weight:500;font-size:13px;color:var(--muted)">「☆ お気に入りに追加」ボタン</span></th>
+          <td>ポケモンを選んだ状態で、特性表示のすぐ下にある「☆ お気に入りに追加」ボタンをタップすると登録できます。登録後はボタンが「★ お気に入り済み（タップで解除）」に変わり、「★ ポケモン名」のチップが表示されます。<small>チップをタップするとそのポケモンを呼び戻せます。保存されるのはポケモン名のみで、配分・性格・持ち物は保存されません。お気に入りはブラウザに保存され、同じブラウザではリロード後も残ります。保存がブロックされている環境では、ボタンの下に「保存できませんでした。このページを開いている間だけ有効で、再読み込みすると消えます」と表示され、そのページを開いている間だけ有効になります。</small></td>
+        </tr>
+        <tr>
+          <th>特性</th>
+          <td>選択中のポケモンの特性が表示・反映されます。<small>ダメージに関わる特性（例：さめはだ等による反動ではなく、被ダメージそのものに影響する特性）は自動で計算に入ります。</small></td>
+        </tr>
+        <tr>
+          <th>HP ／ 防御 ／ 特防<br><span style="font-weight:500;font-size:13px;color:var(--muted)">能力ポイント入力</span></th>
+          <td>各能力に振った能力ポイントを 0〜32 で入力します。<small>物理技は「防御」、特殊技は「特防」で受けます。どちらが弱点か分からないときは、まず HP を多めに振った状態で一覧を確認すると全体像がつかめます。</small></td>
+        </tr>
+        <tr>
+          <th>性格（入力欄）</th>
+          <td>性格による補正（上がる能力／下がる能力）を選びます。<small>欄の上に「性格」というラベルは表示されず、未選択のときは欄の中に「ここに性格を入力」と薄く表示されます。この計算機では性格名そのものではなく、「防御↑」「特防↑」「補正なし」といった補正の向きで設定します。自分の個体の性格に合わせて選んでください。</small></td>
+        </tr>
+        <tr>
+          <th>持ち物（入力欄）</th>
+          <td>防御側が持っている持ち物を選びます。<small>欄の上に「持ち物」というラベルは表示されず、未選択のときは欄の中に「ここに持ち物を入力」と薄く表示されます。とつげきチョッキ（特防×1.5）、しんかのきせき（防御・特防×1.5）、きあいのタスキ（HP満タンなら1残る）、ハバンのみ／ヤチェのみ／シュカのみ（弱点技を1回だけ半減）から選べます。持たせていない場合は「なし」を選びます。</small></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="sp-visual" aria-label="能力ポイントの配分イメージ">
+      <h3 style="margin-top:0">能力ポイント（SP）の考え方</h3>
+      <p style="font-size:14.5px;margin:4px 0">チャンピオンズでは、6能力の合計が <b>66</b> まで、1能力あたり <b>32</b> まで振れます。下は防御側で HP 32・防御 16・特防 16 を振った例です（合計64 ― 残り2は攻撃や素早さに回す想定）。</p>
+      <div class="sp-bar" aria-hidden="true">
+        <div class="sp-hp" style="width:48.5%">HP 32</div>
+        <div class="sp-def" style="width:24.2%">防御 16</div>
+        <div class="sp-spd" style="width:24.2%">特防 16</div>
+        <div class="sp-rest" style="width:3.1%"></div>
+      </div>
+      <div class="sp-caption">
+        <span>● HP 32</span><span>● 防御 16</span><span>● 特防 16</span><span>合計 64 ／ 66</span>
+      </div>
+      <p style="font-size:13.5px;color:var(--muted);margin-bottom:0">耐久の即時プリセットボタンはなく、計算機の画面にはSP合計の表記もありません（上の図の合計は仕組みの説明用です）。数値を直接変えながら結果を見比べるほか、耐久調整（逆算）で「指定した技を耐えるために必要なポイント」を自動で求めることもできます（「6. 結果の読み方」参照）。スマートフォンでもSP入力は横並びのままコンパクトに表示されます。</p>
+    </div>
+  </section>
+
+  <section id="attacker">
+    <h2><span class="no">5</span>攻撃側ポケモン（カスタム計算）</h2>
+    <p class="section-lead">左下のパネルです。一覧とは別に、1体だけを対象に「技・配分・持ち物」を変えて計算できます。データはバトルデータベース チャンピオンズ（シーズンM-8 シングル／レギュレーションM-C）から呼び出します。</p>
+
+    <div class="table-wrap">
+      <table class="def-table">
+        <tr>
+          <th>ポケモンを検索 ／<br>攻撃側ポケモン</th>
+          <td>防御側と同じく、名前の一部で検索して選びます。選択肢は防御側と同じ<b>全1281件・図鑑番号順</b>です。<small>選ぶと、そのポケモンの採用技・性格・配分のデータが読み込まれます。メガシンカ形態は進化前の使用率データを流用しています。特性が未確認のメガヒードラン／メガダークライ／メガジガルデ／メガマギアナ／メガゼラオラ／メガシャリタツの6体は未収録です。</small></td>
+        </tr>
+        <tr>
+          <th>性格（入力欄）</th>
+          <td>攻撃側の性格補正を選びます。<small>欄の上にラベルは表示されず、未選択のときは欄の中に「ここに性格を入力」と薄く表示されます。表示は「おくびょう（S↑／A↓）」のように、上がる能力と下がる能力で表されます。初期値は採用率1位の性格です。</small></td>
+        </tr>
+        <tr>
+          <th>こうげき ／ とくこう ／<br>すばやさ の数値</th>
+          <td>攻撃に必要な分だけを表示・変更できます。数値は直接入力します（<b>配分プリセットは廃止されました</b>）。画面にはSP合計の表記もありません。<small>防御側と違い、HP・防御・特防の入力はありません。選んだ技が物理なら「こうげき」、特殊なら「とくこう」が計算に使われます。すばやさは参考として表示・変更できますが、ダメージ量そのものには影響しません。初期値は採用率1位の配分です。</small></td>
+        </tr>
+        <tr>
+          <th>能力ランク</th>
+          <td>こうげきランクととくこうランクを、それぞれ個別に −6〜+6 で設定できます（初期値はどちらも0）。<small>片方を変えてももう片方は変わりません。物理技にはこうげきランク、特殊技にはとくこうランクの補正がダメージに反映されます。つるぎのまい（こうげき+2）や めいそう（とくこう+1）のあとの状態を想定した計算に使えます。なお、登録アタッカー一覧側のランクは0固定で、変えることはできません。</small></td>
+        </tr>
+        <tr>
+          <th>倒れた味方の数<br><span style="font-weight:500;font-size:13px;color:var(--muted)">特性：そうだいしょう</span></th>
+          <td>ドドゲザンを選んだときだけ表示されます。倒れた味方の数を 0体（×1.0倍）／1体（×1.1倍・初期設定）／2体（×1.2倍）から選びます。<small>登録一覧側のドドゲザンも、0回／1回／2回の3エントリーに分かれて登録されています。</small></td>
+        </tr>
+        <tr>
+          <th>へんげんじざい／リベロ<br><span style="font-weight:500;font-size:13px;color:var(--muted)">タイプ一致の扱い</span></th>
+          <td>マスカーニャ／ゲッコウガ（へんげんじざい）とエースバーン（リベロ）を選んだときだけ表示されます。<small>ON（一致・初期設定）では使う技のタイプに自身のタイプが変わるため全技にタイプ一致1.5倍が付き、OFF（不一致）では元のタイプと一致する技も含めて全技にタイプ一致が付きません。登録一覧側も「一致」「不一致」の2エントリーで登録されています。</small></td>
+        </tr>
+        <tr>
+          <th>技を選択<br><span style="font-weight:500;font-size:13px;color:var(--muted)">最大2つまで</span></th>
+          <td>そのポケモンの採用技一覧から、調べたい技を最大2つ選びます。<small>2つとも選ぶ必要はありません。1つだけでも計算できます。物理／特殊・タイプ・威力は技名の横に表示されます。</small></td>
+        </tr>
+        <tr>
+          <th>任意の技</th>
+          <td>採用技一覧にない技を計算したいときに選びます。<small>各技選択欄にある「任意の技（採用技一覧以外から選ぶ）」を選ぶと、技名で絞り込める全技リストが開きます。ランキング外のポケモンの技や、そのポケモンが通常覚えない技でも、数値上は計算できます。結果には「任意の技」と表示されます。</small></td>
+        </tr>
+        <tr>
+          <th>持ち物（入力欄）<br><span style="font-weight:500;font-size:13px;color:var(--muted)">攻撃用持ち物</span></th>
+          <td>攻撃側の持ち物を選ぶと、ダメージに反映されます。結果にも選んだ持ち物名が表示されます。<small>欄の上にラベルは表示されず、未選択のときは欄の中に「ここに持ち物を入力」と薄く表示されます。</small></td>
+        </tr>
+      </table>
+    </div>
+
+    <h3>選べる攻撃用持ち物と効果</h3>
+    <div class="chips">
+      <span class="chip">なし</span>
+      <span class="chip">こだわりハチマキ <small>物理技 1.5倍</small></span>
+      <span class="chip">こだわりメガネ <small>特殊技 1.5倍</small></span>
+      <span class="chip">いのちのたま <small>全技 1.3倍</small></span>
+      <span class="chip">たつじんのおび <small>効果抜群のとき 1.2倍</small></span>
+      <span class="chip">こだわりスカーフ <small>火力には影響なし</small></span>
+    </div>
+    <div class="callout callout-plain">
+      <p class="callout-title">使い方の例</p>
+      <p>「ガブリアスが こだわりハチマキを持ったら、自分のポケモンは じしん を耐えるか？」―― 攻撃側にガブリアス、技に「じしん」、持ち物に「こだわりハチマキ」を選んで、右側の数値を確認します。耐えなければ、防御側の HP や防御のポイントを増やして再確認します。</p>
+    </div>
+  </section>
+
+  <section id="result">
+    <h2><span class="no">6</span>計算結果の読み方</h2>
+    <p class="section-lead">右側の「受けるダメージ一覧」は、登録アタッカー54種（59エントリー）の使用率上位の攻撃技（各ポケモン最大4つ、イダイトウ♂のみ おはかまいり を加えて5つ）すべてを、防御側に対して計算したものです。並び順は最大ダメージ％が高い順に固定されています（並び替えの機能はありません）。</p>
+
+    <div class="card result-example">
+      <div class="result-head">
+        <strong>表示イメージ</strong>
+        <span>数値は説明用の例です</span>
+      </div>
+      <div class="dmg-row">
+        <div class="dmg-top">
+          <span class="dmg-move">じしん <small>ガブリアス ・ 地面 ・ 物理</small></span>
+          <span class="dmg-val">144〜170 <small>（90.0〜106.2%）</small></span>
+        </div>
+        <div class="bar"><i class="bar-red" style="width:10%"></i></div>
+        <div class="dmg-meta"><span class="tag tag-orange">乱数1発の可能性あり</span><span>残りHP 0〜16 ／ 160</span><span>最小ダメージでは耐え、最大ダメージでは倒れます</span></div>
+      </div>
+      <div class="dmg-row">
+        <div class="dmg-top">
+          <span class="dmg-move">げきりん <small>ガブリアス ・ ドラゴン ・ 物理</small></span>
+          <span class="dmg-val">164〜194 <small>（102.5〜121.2%）</small></span>
+        </div>
+        <div class="bar"><i class="bar-red" style="width:0%"></i></div>
+        <div class="dmg-meta"><span class="tag tag-red">確定1発</span><span>残りHP 0 ／ 160</span><span>最低ダメージでもHPを超えるため、バーは空で赤く表示されます</span></div>
+      </div>
+      <div class="dmg-row" style="margin-bottom:0">
+        <div class="dmg-top">
+          <span class="dmg-move">かえんほうしゃ <small>特殊技の例 ・ 炎 ・ 特殊</small></span>
+          <span class="dmg-val">42〜50 <small>（26.2〜31.2%）</small></span>
+        </div>
+        <div class="bar"><i class="bar-green" style="width:69%"></i></div>
+        <div class="dmg-meta"><span class="tag tag-gray">確定4発</span><span>残りHP 110〜118 ／ 160</span><span>この技だけなら余裕を持って耐えます</span></div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <div class="legend-item">
+        <b>ダメージ量（例：144〜170）</b>
+        <p>1回の技で受けるダメージの範囲です。ポケモンのダメージには乱数（0.85〜1.00倍）があるため、最小〜最大で表示されます。左が一番小さいとき、右が一番大きいときです。</p>
+      </div>
+      <div class="legend-item">
+        <b>割合（例：90.0〜106.2%）</b>
+        <p>防御側の最大HPに対して、そのダメージが何％にあたるかです。100%を超えれば1発で倒れます。</p>
+      </div>
+      <div class="legend-item">
+        <b>残りHPバー（対戦風）</b>
+        <p>バーはダメージ量ではなく、受けたあとの<strong>残りHP</strong>を表します。色は対戦画面と同じで、残り50%超は緑、20〜50%は黄、20%未満は赤です。確定1発のときはバーが空になり赤く表示されます。バーの横には「残りHP ○○ ／ 最大HP」の数字も表示されるので、あとどれだけ耐えられるかが一目で分かります。</p>
+      </div>
+      <div class="legend-item">
+        <b>「確定」の基準（最大／最小ダメージ）</b>
+        <p>「確定で耐える」は、相手のダメージが最大に出ても耐えること（<strong>最大ダメージ基準</strong>）です。逆に「確定で倒す」は、自分のダメージが最小に出ても倒せること（<strong>最小ダメージ基準</strong>）です。耐久調整は最大ダメージ基準、火力調整は最小ダメージ基準で逆算します。</p>
+      </div>
+      <div class="legend-item">
+        <b>確定1発</b>
+        <p>乱数が一番小さく出ても倒れる、という意味です。対面したら確実に倒される技なので、交代や対策を考える目安になります。</p>
+      </div>
+      <div class="legend-item">
+        <b>乱数1発（乱数1発の可能性あり）</b>
+        <p>乱数が大きく出たときだけ倒れる技です。「だいたい耐えるが、運が悪いと倒れる」状態です。少しだけ耐久を増やすと乱数1発を回避できることもあります。</p>
+      </div>
+      <div class="legend-item">
+        <b>確定2発 ／ 確定3発 など</b>
+        <p>その技を連続で受けたときに、何発で倒れるかです。確定2発なら、2回目で確実に倒れます。回復や交代を挟めるかどうかを考える目安になります。</p>
+      </div>
+      <div class="legend-item">
+        <b>痛い順の並び（固定）</b>
+        <p>一覧は最大ダメージ％が高い順に固定で並びます。並び替えの欄はありません。上にあるほど危険な組み合わせです。下の方は「その相手は比較的安全」と読めますが、相手の他の技や持ち物で変わる点には注意してください。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>耐久調整（必要なH・BDを逆算）</h3>
+      <p>耐えたい技を指定すると、その技を目標の発数で耐えるために必要な耐久を自動で逆算します。これまでは防御側の数値を1ずつ変えて境目を探す必要がありましたが、逆算を使えば必要な振り方がその場で分かります。計算はすべて<strong>最大ダメージ基準</strong>です（相手のダメージが最大に出ても耐える＝確定で耐える、の判定）。</p>
+      <ul>
+        <li><b>使い方：</b>耐久調整の欄で、対象の攻撃側ポケモンと技、耐えたい条件（例：確定2発で耐える）を選びます。現在の防御側ポケモン・性格補正・持ち物・場の条件を前提に計算されます。</li>
+        <li><b>結果は2つ同時に表示されます：</b>
+          <ul>
+            <li><b>Hのみの最小</b> ― 防御／特防は今の配分のまま、HPだけを増やしたときに必要な最小のH（実数値もあわせて表示）。H32まで振っても耐えられない場合は、その旨が表示されます。</li>
+            <li><b>完全な最小（BD振り直し込み）</b> ― HP・防御／特防の振り直しも含めて、合計ポイントが最も少なくなる配分。Hのみでそろえるより少ない合計で耐えられることがあります。</li>
+          </ul>
+        </li>
+        <li><b>上限の確認：</b>どちらの最小も1能力32まで・合計66までの範囲で判定されます。範囲に収まらない場合は、その条件では耐えられない（振り切っても届かない）という判断になります。そのときは持ち物（とつげきチョッキ、しんかのきせき、タイプ半減のみ等）や性格補正を変えて再計算してみてください。</li>
+        <li><b>場の条件も前提に入ります：</b>天候・フィールド・壁・急所・条件付き補正（げきりゅう等）の設定も逆算に反映されます。想定する対面の条件を先に合わせてから逆算してください。</li>
+      </ul>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:0">※ 逆算はあくまで指定した1つの技に対する目安です。複数の技を同時に耐えたいときは、それぞれの技で逆算し、最も要求が高い配分に合わせます。</p>
+    </div>
+
+    <div class="card">
+      <h3>火力調整（必要な攻撃SPを逆算）</h3>
+      <p>耐久調整の逆で、攻撃側の必要ポイントを逆算します。カスタム計算で選んだ攻撃側ポケモンと技を対象に、目標の確定発数で倒すために必要な「こうげき」または「とくこう」のSPを表示します。計算は<strong>最小ダメージ基準</strong>です（自分のダメージが最小に出ても倒せる＝確定で倒す、の判定）。</p>
+      <ul>
+        <li><b>使い方：</b>先に左下のカスタム計算で攻撃側ポケモンと技を選び、火力調整の欄で目標の確定発数（例：確定1発／確定2発）を指定します。防御側の現在の耐久・性格補正・持ち物・場の条件を前提に計算されます。</li>
+        <li><b>結果の見方：</b>物理技なら必要な「こうげき」SP、特殊技なら必要な「とくこう」SPが表示されます。今の配分ですでに足りているか、あと何ポイント必要かが分かります。</li>
+        <li><b>上限の確認：</b>必要なSPが32を超える場合は、その技・条件では確定発数に届かないという判断になります。持ち物（こだわりハチマキ、いのちのたま等）や能力ランク、技を変えて再計算してみてください。</li>
+      </ul>
+    </div>
+
+    <div class="callout callout-green">
+      <p class="callout-title">耐久調整のコツ</p>
+      <p>気になる技が「乱数1発」なら、HPや防御／特防をあと少し増やすだけで「確定で耐える」に変わることがあります。まずは上の耐久調整（逆算）で必要なポイントを確認し、足りない分だけ防御側の数値を増やして一覧で再確認するのが効率的です。逆に、逆算しても上限いっぱいまで振らないと耐えられない、あるいは振り切っても確定1発のままなら、その対面は避ける前提でパーティを組む判断ができます。</p>
+    </div>
+  </section>
+
+  <section id="filter">
+    <h2><span class="no">7</span>場の条件と表示</h2>
+    <p class="section-lead">右側には「場の条件」と「表示」という、役割の違う2つのパネルがあります。「場の条件」は計算そのものを変え、「表示」は一覧の見せ方だけを変えます。以前は1つにまとまっていましたが、現在は分かれていて、「表示」はカスタム計算の結果の下、「受けるダメージ一覧」のすぐ上にあります。</p>
+
+    <div class="card">
+      <h3>場の条件 ― 計算に影響する条件</h3>
+      <ul>
+        <li><b>天候：</b>なし／晴れ／雨／砂嵐／雪から選びます。ほのお・みず技の威力補正のほか、砂嵐では<b>いわタイプの特防が1.5倍</b>、雪では<b>こおりタイプの防御が1.5倍</b>になる補正も計算に反映されます。</li>
+        <li><b>フィールド：</b>なし／グラス／エレキ／サイコ／ミストフィールドから選びます。該当タイプの技の威力補正や、グラスフィールドでの回復・じしん等の半減などが反映されます。</li>
+        <li><b>壁：</b>なし／リフレクター（物理半減）／ひかりのかべ（特殊半減）／オーロラベール（両方半減）から選びます。</li>
+        <li><b>特性の天候・フィールドを自動反映（晴れ／砂嵐／雪／グラス／サイコ）：</b>初期状態でオンです。対象の登録アタッカーについては、手動で選んだ天候・フィールドより特性側が優先されて計算されます。
+          <ul>
+            <li>晴れ ― ひざしを呼ぶ特性（メガリザードンY）</li>
+            <li>砂嵐 ― すなおこし（カバルドン／バンギラス）</li>
+            <li>雪 ― ゆきふらし（アローラキュウコン）</li>
+            <li>グラスフィールド ― グラスメイカー（ゴリランダー）</li>
+            <li>サイコフィールド ― サイコメイカー（イエッサン♂）</li>
+          </ul>
+          たとえばカバルドン／バンギラスを相手にすると自動で砂嵐になり、いわタイプの特防1.5倍や、砂嵐ダメージを前提にした数値になります。アローラキュウコンなら自動で雪になり、こおりタイプの防御1.5倍が反映されます。手動の天候で固定したいときは、自動反映をオフにしてください。</li>
+        <li><b>条件付き補正：</b>HPや状態異常が条件になる特性・技の補正を、条件を満たした前提で計算するかどうかを切り替えます。初期状態ではオフ（条件を満たしていない前提）で、オンにしたものだけが反映されます。
+          <ul>
+            <li><b>げきりゅう（アシレーヌ）：</b>HPが1/3以下になった前提で、みず技の威力が1.5倍になります。</li>
+            <li><b>もうか（ラウドボーン）：</b>HPが1/3以下になった前提で、ほのお技の威力が1.5倍になります。</li>
+            <li><b>たたりめ（メガゲンガー／ラウドボーン）：</b>防御側が状態異常（やけど・どく・まひ等）になっている前提で、たたりめの威力が2倍になります。</li>
+            <li><b>ひとでなし（ドヒドイデ）：</b>防御側がどく状態になっている前提で、攻撃が必ず急所に当たります（急所として計算されます）。</li>
+          </ul>
+          登録アタッカー一覧とカスタム計算の両方に適用されます。「残りHPが少ない相手」「状態異常を入れたあとの相手」を想定するときにオンにしてください。</li>
+        <li><b>すべて急所で計算：</b>オンにすると全技を急所ヒット（×1.5、相手の防御ランク上昇は無視）として計算します。ひとでなしの急所とは別に、急所前提で全体を見たいときに使います。</li>
+      </ul>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:0">※ 天候の自動反映がオンのときは、登録アタッカーごとに特性の天候が優先されます。カスタム計算で別の天候を固定したい場合や、特性が発動していない場面を想定したい場合は、自動反映をオフにして天候を手動で選んでください。</p>
+    </div>
+
+    <div class="card">
+      <h3>表示 ― 一覧の絞り込み（計算は変わりません）</h3>
+      <ul>
+        <li><b>攻撃側・技名で絞る：</b>検索欄に文字を入れると、ポケモン名・技名のどちらかに一致する行だけが残ります。たとえば「じしん」と入れると、じしんを使うアタッカーだけが残り、カバルドンやガブリアス、ドリュウズなどを横並びで比べられます。</li>
+        <li><b>確定発数の範囲で絞る：</b>「確定n発以上」「確定m発以下」の2つの数値入力で範囲を指定すると、その範囲に入る行だけが残ります。たとえば「1発以上・2発以下」と指定すれば、1〜2発で倒れる技だけを表示できます。下限だけ、上限だけの指定もでき、両方とも空欄なら絞り込みなし（全件表示）です。入力中は、効果のない攻撃（ダメージ0）は除外されます。</li>
+        <li><b>乱数n発を含める：</b>確定数入力の右側にあるチェックボックスです。チェックすると、乱数の出方によっては範囲内の発数で倒せるもの（「乱数n発」「乱数n発〜確定m発」と表示されるもの）も含めて表示します。チェックしない場合は、そうした乱数で倒せるものは<b>確定数が範囲内でも表示されず</b>、純粋な確定n発のものだけが対象になります。「乱数1発で倒れるかもしれない相手まで洗い出したい」ときはチェックを入れ、「確実に倒れる相手だけ見たい」ときは外してください。</li>
+        <li><b>先制技だけ表示（優先度+1以上）：</b>しんそく、かげうち、アクアジェット、バレットパンチ、ねこだまし等の先制技だけを表示します。グラススライダーはグラスフィールドのときだけ先制技として扱います。確定数の絞り込みと併用でき、対象は「受けるダメージ一覧」だけです（カスタム計算には適用されません）。</li>
+        <li><b>解除して全体に戻す：</b>入力やチェックをすべて外すと、全エントリーの結果が再び表示されます。</li>
+      </ul>
+      <p style="font-size:14px;color:var(--muted)">※ 確定発数の判定は<b>最小ダメージでの確定数</b>で行います。乱数しだいで倒れる「乱数1発」の攻撃は、通常は確定1発として扱われません（上の「乱数n発を含める」を入れた場合のみ、乱数側も含めて判定されます）。</p>
+      <p style="font-size:14px;color:var(--muted);margin-bottom:0">※ 「表示」の絞り込みは表示だけを変える機能で、計算そのものや並び順（痛い順・固定）は変わりません。行が表示されない場合は、その条件に当てはまる登録技が一覧に存在しないという意味です。</p>
+    </div>
+  </section>
+
+  <section id="rules">
+    <h2><span class="no">8</span>計算の前提</h2>
+    <p class="section-lead">すべての計算は、以下の前提で統一されています。入力欄にない項目は、ここに書かれた値で固定です。</p>
+    <div class="table-wrap">
+      <table class="def-table">
+        <tr><th>ルール</th><td>ポケモンチャンピオンズ準拠 ／ シングルバトル</td></tr>
+        <tr><th>レベル</th><td>50固定（全ポケモン）</td></tr>
+        <tr><th>個体値</th><td>全能力 31固定（いわゆる「V」想定）</td></tr>
+        <tr><th>能力ポイント</th><td>合計66まで ／ 1能力あたり32まで（チャンピオンズのSP仕様）</td></tr>
+        <tr><th>登録アタッカー</th><td>シーズンM-8 シングルの使用率上位50位まで ＋ メガガブリアスZ ― 54種。特性で数え方が変わるポケモンは別エントリーになるため、一覧は全59エントリーです。アタッカー型に限らず、防御型・受け型も含みます</td></tr>
+        <tr><th>登録アタッカーの技</th><td>各ポケモンの使用率上位の攻撃技のみ（最大4つ。イダイトウ♂のみ おはかまいり を加えて5つ）</td></tr>
+        <tr><th>かたやぶり</th><td>メガギャラドス／ドリュウズは防御側の特性を無視して計算します。ふゆうの相手にもじめん技がタイプ相性通り当たり、マルチスケイルの半減・ばけのかわ・がんじょうも無効化されます。ただし、ひこうタイプ自体のじめん無効や、きあいのタスキ等の持ち物は無視しません。登録一覧・カスタム計算の両方に適用されます</td></tr>
+        <tr><th>フリーズドライ</th><td>アローラキュウコンのフリーズドライは、みずタイプにも効果抜群（×2）として計算します。複合タイプではもう一方のタイプへの倍率と掛け合わせます（例：みず／じめんには×4）</td></tr>
+        <tr><th>へんげんじざい／リベロ</th><td>マスカーニャ／ゲッコウガ／エースバーンは「一致」「不一致」の2エントリーで登録しています。一致版は全技にタイプ一致1.5倍、不一致版は元のタイプと一致する技も含めて全技タイプ一致なしです。カスタム計算でもON（一致）／OFF（不一致）を選べます</td></tr>
+        <tr><th>そうだいしょう／おはかまいり</th><td>ドドゲザンは倒れた味方の数ごとに 0回（×1.0）／1回（×1.1）／2回（×1.2）の3エントリーで登録しています。イダイトウ♂のおはかまいりは、味方2体が倒れたときの威力150（基本50＋倒れた味方1体ごとに+50）として計算します</td></tr>
+        <tr><th>天候・フィールドの自動反映</th><td>「場の条件」の自動反映がオン（初期状態）のとき、登録アタッカーの特性による天候・フィールドが手動設定より優先されます。対象は晴れ（メガリザードンY）、砂嵐（すなおこし：カバルドン／バンギラス）、雪（ゆきふらし：アローラキュウコン）、グラスフィールド（ゴリランダー）、サイコフィールド（イエッサン♂）です。オフにすると手動で選んだ天候・フィールドで統一して計算します</td></tr>
+        <tr><th>条件付き補正</th><td>初期状態ではオフ（発動していない前提）です。「場の条件」でオンにした場合のみ反映されます。げきりゅう（アシレーヌ：HP1/3以下でみず技1.5倍）、もうか（ラウドボーン：HP1/3以下でほのお技1.5倍）、たたりめ（メガゲンガー／ラウドボーン：防御側が状態異常のとき威力2倍）、ひとでなし（ドヒドイデ：防御側がどく状態のとき必ず急所）が対象です</td></tr>
+        <tr><th>選択肢（防御側・攻撃側）</th><td>全1025種＋フォルム違いで全1281件、図鑑番号順に並びます。特性が未確認のため、メガヒードラン／メガダークライ／メガジガルデ／メガマギアナ／メガゼラオラ／メガシャリタツの6体は未収録です</td></tr>
+        <tr><th>はどうのぼうご</th><td>メガルカリオZの特性です。防御側がメガルカリオZのとき、接触技のダメージが半減して計算されます</td></tr>
+        <tr><th>とびだすハバネロ</th><td>メガスコヴィランの特性です。防御側がメガスコヴィランのとき、ダメージを受けたときに攻撃側がやけどになる旨の注記が結果に表示されます（注記表示であり、その後のやけどによるダメージ変化までを前提にした計算ではありません）</td></tr>
+        <tr><th>耐久調整（逆算）</th><td>指定した技を目標の発数で耐えるために必要な耐久を、<b>最大ダメージ基準</b>で逆算します（確定で耐える＝最大ダメージ基準）。結果は「Hのみの最小」と「HP・防御／特防を振り直した完全な最小」の2つを同時に表示します。防御側の現在の性格補正・持ち物と、「場の条件」（天候・フィールド・壁・条件付き補正等）を前提に計算し、1能力32まで・合計66までの範囲で判定されます。H32でも耐えられない場合はその旨を表示します</td></tr>
+        <tr><th>火力調整（逆算）</th><td>カスタム計算で選んだ攻撃側の技と目標の確定発数から、必要なこうげき／とくこうSPを、<b>最小ダメージ基準</b>で逆算します（確定で倒す＝最小ダメージ基準）</td></tr>
+        <tr><th>登録アタッカーの性格・配分</th><td>性格は採用率1位、配分は個別1位が基本です</td></tr>
+        <tr><th>登録アタッカーの持ち物</th><td>ダメージ補正のある持ち物（いのちのたま、くろいメガネ、ノーマルジュエル等）のうち、そのポケモンでの採用率が10%以上あるものだけ補正を適用します。採用率10%未満の火力持ち物と、補正のない持ち物のポケモンは「なし」として計算します</td></tr>
+        <tr><th>能力ランク</th><td>登録アタッカー一覧側は 0 固定。攻撃側カスタム計算でのみ、こうげき／とくこうを個別に −6〜+6 で設定できます</td></tr>
+        <tr><th>データ出典</th><td>バトルデータベース チャンピオンズ（シーズンM-8）／ ポケモン徹底攻略のデータをもとに作成<small>配分の参考：<a href="https://champs.pokedb.tokyo/pokemon/list?rule=0" target="_blank" rel="noopener">champs.pokedb.tokyo ― ポケモン一覧（シーズンM-8 シングル）</a></small></td></tr>
+      </table>
+    </div>
+    <p style="font-size:14px;color:var(--muted)">重さに依存する技（けたぐり、ヘビーボンバー等）は、各ポケモンの重さを反映して威力を計算しています。高さのデータは計算に使わないため扱っていません。</p>
+  </section>
+
+  <section id="notes">
+    <h2><span class="no">9</span>対象外・注意点</h2>
+    <p class="section-lead">天候の自動反映・条件付き補正・耐久調整は計算に含まれるようになりました。以下は、それらを使うときの注意点と、今も対象外の要素です。実際の対戦では数値が前後する場合があるため、一覧は前提条件をそろえた上での目安として使ってください。</p>
+    <div class="card">
+      <h3 style="margin-top:0">反映されるようになった機能の注意点</h3>
+      <ul style="margin-top:0">
+        <li><b>すなおこし・ゆきふらしも天候に自動反映されます。</b>カバルドン／バンギラスは砂嵐、アローラキュウコンは雪が、「場の条件」の自動反映がオンのときに手動の天候より優先されます。晴れ（メガリザードンY）・グラスフィールド・サイコフィールドとあわせて自動反映の対象です。特性が発動していない場面や、別の天候で固定したい場面では、自動反映をオフにして天候を手動で選んでください（詳しくは「7. 場の条件と表示」）。</li>
+        <li><b>条件付き補正は、オンにしたときだけ反映されます。</b>げきりゅう（アシレーヌ）、もうか（ラウドボーン）、たたりめ（メガゲンガー／ラウドボーン）、ひとでなし（ドヒドイデ）は、「場の条件」の条件付き補正をオンにした場合のみ、条件を満たした前提で計算されます。初期状態（オフ）の数値は、条件が発動していない前提の値です。対面の途中でHPが減ったあとや、状態異常を入れたあとを想定するときに切り替えてください。</li>
+        <li><b>耐久調整（逆算）の結果は、指定した1つの技に対する目安です。</b>「この技を確定2発で耐えるにはどれだけ振ればいいか」を、最大ダメージ基準で自動で求められます（詳しくは「6. 結果の読み方」の「耐久調整（逆算）」）。結果は「Hのみの最小」と「BD振り直し込みの完全な最小」の2つが同時に表示されますが、複数の技を同時に耐える保証にはなりません。また、逆算の前提には現在の性格補正・持ち物・場の条件が含まれるため、前提を変えると必要なポイントも変わります。上限（1能力32まで・合計66まで）を超える場合や、H32でも耐えられない場合は、その条件では耐えられないという結果になります。火力調整（逆算）は逆に、カスタム技を確定n発で倒すために必要な攻撃SPを最小ダメージ基準で求めます。</li>
+        <li><b>はどうのぼうご／とびだすハバネロの扱い。</b>メガルカリオZの「はどうのぼうご」は、接触技のダメージ半減として計算に反映されます。メガスコヴィランの「とびだすハバネロ」は、ダメージを受けたときに攻撃側がやけどになる旨の注記が表示される形で扱います（注記の表示であり、やけど後のダメージ変化を前提にした計算ではありません）。</li>
+        <li><b>特性が未確認の6体は未収録です。</b>メガヒードラン／メガダークライ／メガジガルデ／メガマギアナ／メガゼラオラ／メガシャリタツは、特性が未確認のため防御側・攻撃側の選択肢（全1281件）に入っていません。</li>
+      </ul>
+      <h3>今も対象外の要素</h3>
+      <ul>
+        <li><b>能力ランクを設定できるのは攻撃側カスタム計算だけです。</b>カスタム計算ではこうげきランクととくこうランクを個別に −6〜+6 で設定でき、物理技にはこうげきランク、特殊技にはとくこうランクが反映されます。一方、登録アタッカー一覧側のランクは0固定です。また、防御側のランク変化（てっぺきによる防御+2など）は計算に含まれません。</li>
+        <li><b>状態異常そのものによる変化は対象外です。</b>たたりめ・ひとでなしの条件としての状態異常は上の条件付き補正で扱いますが、やけどによる物理ダメージ半減など、状態異常そのものがダメージ量を変える効果を前提にした計算はできません。</li>
+        <li><b>ダブルバトルの範囲補正は対象外です。</b>この計算機はシングル専用です。ダブルで範囲技にかかる 0.75倍補正などは適用されません。</li>
+        <li><b>登録アタッカーの持ち物は、補正のあるものだけが計算に入ります。</b>いのちのたまなどダメージ補正のある持ち物のうち採用率10%以上のものは補正が適用されますが、採用率10%未満の火力持ち物や、メガストーン・こだわりスカーフ・とつげきチョッキ・たべのこしなど補正のない持ち物のポケモンは「なし」として計算されます。別の持ち物を想定したいときは、カスタム計算で持ち物を選んで確認してください。</li>
+        <li><b>登録技は使用率上位のみです。</b>採用率の低い技や変化技は一覧に含まれません。気になる技は「任意の技」で個別に計算できます。</li>
+        <li><b>環境データはシーズンM-8時点のものです。</b>シーズンが変わると使用率や配分の傾向も変わります。数値はその時点の環境を前提にした目安です。</li>
+      </ul>
+      <p style="margin-bottom:0;font-size:14.5px">また、急所ヒット時のダメージも通常計算とは別になります。表示されているのは、急所設定やひとでなしをオンにした場合を除き、急所ではない通常ヒットの範囲です。</p>
+    </div>
+  </section>
+
+  <section id="faq">
+    <h2><span class="no">10</span>よくある質問</h2>
+
+    <details>
+      <summary>選んだポケモンが一覧に出てきません</summary>
+      <div class="detail-body">
+        <p>一覧に出るのは「登録アタッカー54種（59エントリー）」だけです。防御側やカスタム計算では選べても、一覧の攻撃側には登録されていないポケモンがいます。その場合は左下のカスタム計算でそのポケモンを選び、技を指定して計算してください。</p>
+        <p>また、「表示」パネルで絞り込みをしていると、条件に合わない行は表示されません。絞り込みを解除すると全件に戻ります。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>「じしん」で絞ってもカバルドンが出ませんでした（過去の仕様）</summary>
+      <div class="detail-body">
+        <p>以前は登録アタッカーが26体で、カバルドンが含まれていなかったため表示されませんでした。現在は上位50位までの54種（59エントリー）に広がり、カバルドン（3位）も登録されています。ただしカバルドンは耐久寄りの配分が基本のため、じしんのダメージは控えめで、一覧の下の方に並びます。絞り込みは「表示」パネルの「攻撃側・技名で絞り込み」に入力します。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>能力ポイントは合計66ぴったりにしないといけませんか？</summary>
+      <div class="detail-body">
+        <p>防御側については、ぴったりにする必要はありません。防御側で入力するのは HP・防御・特防の3つだけです。残りのポイントは攻撃やすばやさに回している想定で計算されます。大切なのは「自分の個体が実際に振っている耐久分」を正しく入力することです。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>攻撃側で技を1つだけ調べたいときは？</summary>
+      <div class="detail-body">
+        <p>技の選択は最大2つまでで、1つだけでも問題ありません。もう一方は未選択のままにするか、比較したい別の技を入れて並べて確認できます。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>ランクが上がった状態で計算できますか？</summary>
+      <div class="detail-body">
+        <p>攻撃側カスタム計算でのみ設定できます。「能力ランク」の欄で、こうげきランクととくこうランクをそれぞれ個別に −6〜+6 で指定してください（初期値は0）。物理技にはこうげきランク、特殊技にはとくこうランクの補正が反映されます。登録アタッカー一覧側のランクは0固定で、防御側のランク変化は計算に含まれません。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>そのポケモンが覚えない技でも計算できるのはなぜですか？</summary>
+      <div class="detail-body">
+        <p>「任意の技」は、数値上の比較や検証のための機能です。覚えるかどうかに関係なく、威力・タイプ・物理／特殊からダメージを計算します。実戦で使えるかどうかは別途確認してください。結果には「任意の技」と分かるように表示されます。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>背景の色を変えられますか？</summary>
+      <div class="detail-body">
+        <p>変えられます。計算機のタイトル横、「操作説明」リンクの並びにある「背景色」で、標準／ダーク／ベージュ／みどりの4種類から選んでください。変わるのはページの背景だけで、入力パネルや結果カードの中は白のままで、計算結果にも影響しません。選んだ色はブラウザに保存され、次回も引き継がれます。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>「乱数n発を含める」は何をするチェックですか？</summary>
+      <div class="detail-body">
+        <p>「表示」パネルの、確定数入力の右側にあるチェックです。確定数の絞り込みと組み合わせて使います。チェックを入れると、乱数の出方によっては範囲内の発数で倒せるもの（「乱数1発」など）も表示されます。チェックを外すと、それらの乱数で倒せるものは確定数が範囲内でも表示されず、純粋な確定n発のものだけが残ります。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>カバルドンやアローラキュウコンの天候は自動で反映されますか？</summary>
+      <div class="detail-body">
+        <p>反映されます。「場の条件」の天候・フィールド自動反映がオン（初期状態）のとき、カバルドン／バンギラスのすなおこしは砂嵐、アローラキュウコンのゆきふらしは雪として、手動で選んだ天候より優先して計算されます。砂嵐ならいわタイプの特防1.5倍、雪ならこおりタイプの防御1.5倍も含まれます。別の天候で固定したいときは自動反映をオフにしてください。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>げきりゅう・もうか・たたりめ・ひとでなしはどうやって反映しますか？</summary>
+      <div class="detail-body">
+        <p>「場の条件」の条件付き補正で切り替えます。初期状態ではオフで、条件が発動していない前提の数値です。オンにすると、げきりゅう（アシレーヌ：HP1/3以下でみず技1.5倍）、もうか（ラウドボーン：HP1/3以下でほのお技1.5倍）、たたりめ（メガゲンガー／ラウドボーン：防御側が状態異常のとき威力2倍）、ひとでなし（ドヒドイデ：防御側がどく状態のとき必ず急所）が、条件を満たした前提で計算されます。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>耐久調整（逆算）はどう使いますか？</summary>
+      <div class="detail-body">
+        <p>耐えたい技と、耐えたい発数（例：確定2発で耐える）を指定すると、その技を耐えるために必要な耐久が自動で表示されます。結果は2つ同時に出ます。「Hのみの最小」は防御／特防を変えずHPだけを増やす場合の最小のH、「完全な最小」はHP・防御／特防の振り直しも含めて合計が最も少なくなる配分です。どちらも最大ダメージ基準（ダメージが最大に出ても耐える）で計算されます。性格補正・持ち物・場の条件も前提に入るため、想定する条件を先に合わせてから使ってください。H32まで振っても耐えられない場合や、必要なポイントが上限を超える場合は、その条件では耐えられません。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>火力調整（逆算）はどう使いますか？</summary>
+      <div class="detail-body">
+        <p>カスタム計算で攻撃側ポケモンと技を選んだうえで、目標の確定発数を指定すると、その技で確定n発で倒すために必要な「こうげき」または「とくこう」のSPが表示されます。判定は最小ダメージ基準（ダメージが最小に出ても倒せる）です。必要なSPが32を超える場合は、その条件では届きません。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>欄を折りたたむにはどうしますか？</summary>
+      <div class="detail-body">
+        <p>各欄の見出しをタップすると、その欄だけが開閉します（タイトルの下にも案内があります）。最初はすべて開いた状態で、1つ閉じても他の欄は変わりません。閉じると下の欄が上に詰まり、見出しには現在の選択内容・配分が小さく表示されるので、開かなくても中身の概要が分かります。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>ダメージバーの色は何を表していますか？</summary>
+      <div class="detail-body">
+        <p>バーはダメージ量ではなく、技を受けたあとの残りHPを表す対戦風の表示です。残り50%超は緑、20〜50%は黄、20%未満は赤で、確定1発のときはバーが空になって赤く表示されます。横に「残りHP ○○ ／ 最大HP」の数字も出ます。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>お気に入りへの追加方法を教えてください</summary>
+      <div class="detail-body">
+        <p>①「防御側ポケモン」パネルでポケモンを選びます。②特性表示のすぐ下にある「☆ お気に入りに追加」ボタンをタップします。③ボタンが「★ お気に入り済み（タップで解除）」に変わり、「★ ポケモン名」のチップが出れば登録完了です。チップをタップすると、そのポケモンを呼び戻せます。解除したいときは、ボタンをもう一度タップしてください。防御側パネルを折りたたんでいるとボタンも隠れるので、パネルを開いた状態で操作してください。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>お気に入りはどこに保存されますか？</summary>
+      <div class="detail-body">
+        <p>防御側ポケモンのお気に入りは、お使いのブラウザに保存されます。同じブラウザではリロード後や次に開いたときも残っていて、チップからすぐ選べます。別のブラウザや端末には引き継がれません。保存されるのはポケモン名だけで、配分・性格・持ち物は保存されません。</p>
+        <p>ブラウザの保存がブロックされている環境では、ボタンをタップすると表示はすぐ変わりますが、ボタンの下に「保存できませんでした。このページを開いている間だけ有効で、再読み込みすると消えます」という注記が出ます。その場合は、そのページを開いている間だけお気に入りが有効です。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>一部のメガシンカが選べません</summary>
+      <div class="detail-body">
+        <p>防御側・攻撃側の選択肢は全1025種＋フォルム違いで1281件（図鑑番号順）ですが、メガヒードラン／メガダークライ／メガジガルデ／メガマギアナ／メガゼラオラ／メガシャリタツの6体は、特性が未確認のため未収録です。特性が判明し次第の収録となります。</p>
+      </div>
+    </details>
+
+    <details>
+      <summary>スマホでも使えますか？</summary>
+      <div class="detail-body">
+        <p>使えます。画面幅が狭いときは、防御側 → 攻撃側 → 結果の順に縦に並ぶレイアウトに自動で切り替わります。入力すると結果はその場で更新されます。</p>
+      </div>
+    </details>
+  </section>
+
+  <footer>
+    <p>対象ツール：被ダメージ計算機 ― ポケモンチャンピオンズ準拠（シーズンM-8 シングル／レギュレーションM-C）<br>
+    データ出典：<a href="https://champs.pokedb.tokyo/pokemon/list?rule=0" target="_blank" rel="noopener">バトルデータベース チャンピオンズ</a>、ポケモン徹底攻略<br>
+    このページは上記計算機の操作説明です。計算機本体の画面からも、この説明へのリンクを開けます。</p>
+    <a class="back-top" href="#top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">↑ ページの先頭へ戻る</a>
+  </footer>
+
+</div>
+<script>
+  // 目次リンクのスムーズスクロール補助（CSS scroll-behavior が効かない環境向け）
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){
+    a.addEventListener('click', function(e){
+      var id = a.getAttribute('href');
+      if(id.length > 1){
+        var el = document.querySelector(id);
+        if(el){ e.preventDefault(); el.scrollIntoView({behavior:'smooth', block:'start'}); history.replaceState(null,'',id); }
+      }
+    });
+  });
+</script>
+</body>
+</html>
